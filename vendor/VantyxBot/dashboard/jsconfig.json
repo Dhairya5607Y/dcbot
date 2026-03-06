@@ -2,7 +2,7 @@
   "compilerOptions": {
     "paths": {
       "@/*": ["./*"],
-      "@config": ["../config.js"],
+      "@config": ["./config.js"],
       "@components": ["./components/*"],
       "@context": ["./context/*"],
       "@utils": ["./utils/*"],

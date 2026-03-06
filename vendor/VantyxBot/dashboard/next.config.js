@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 
 const path = require("path");
-const config = require("../config");
-const apiURL = config.API_URL;
+const config = require("./config");
+const apiURL = config.API_URL || "http://localhost";
 const { hostname } = new URL(apiURL);
 
 const nextConfig = {
