@@ -25,15 +25,15 @@ if (process.env.WEBHOOK_ID && process.env.WEBHOOK_TOKEN) {
 }
 
 
-const startLogs = new Discord.WebhookClient({
+const startLogs = (webhook.startLogs.id && webhook.startLogs.token) ? new Discord.WebhookClient({
     id: webhook.startLogs.id,
     token: webhook.startLogs.token,
-});
+}) : { send: () => {} };
 
-const shardLogs = new Discord.WebhookClient({
+const shardLogs = (webhook.shardLogs.id && webhook.shardLogs.token) ? new Discord.WebhookClient({
     id: webhook.shardLogs.id,
     token: webhook.shardLogs.token,
-});
+}) : { send: () => {} };
 
 const manager = new Discord.ShardingManager('./src/bot.js', {
     totalShards: 'auto',
@@ -152,15 +152,15 @@ manager.spawn();
 
 
 // Webhooks
-const consoleLogs = new Discord.WebhookClient({
+const consoleLogs = (webhook.consoleLogs.id && webhook.consoleLogs.token) ? new Discord.WebhookClient({
     id: webhook.consoleLogs.id,
     token: webhook.consoleLogs.token,
-});
+}) : { send: () => Promise.resolve() };
 
-const warnLogs = new Discord.WebhookClient({
+const warnLogs = (webhook.warnLogs.id && webhook.warnLogs.token) ? new Discord.WebhookClient({
     id: webhook.warnLogs.id,
     token: webhook.warnLogs.token,
-});
+}) : { send: () => Promise.resolve() };
 
 process.on('unhandledRejection', error => {
     console.error('Unhandled promise rejection:', error);

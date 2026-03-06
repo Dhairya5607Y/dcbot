@@ -135,15 +135,15 @@ client.triviaManager = new Map();
 client.queue = new Map();
 
 // Webhooks
-const consoleLogs = new Discord.WebhookClient({
+const consoleLogs = (client.webhooks.consoleLogs.id && client.webhooks.consoleLogs.token) ? new Discord.WebhookClient({
     id: client.webhooks.consoleLogs.id,
     token: client.webhooks.consoleLogs.token,
-});
+}) : { send: () => Promise.resolve() };
 
-const warnLogs = new Discord.WebhookClient({
+const warnLogs = (client.webhooks.warnLogs.id && client.webhooks.warnLogs.token) ? new Discord.WebhookClient({
     id: client.webhooks.warnLogs.id,
     token: client.webhooks.warnLogs.token,
-});
+}) : { send: () => Promise.resolve() };
 
 // Load handlers
 fs.readdirSync('./src/handlers').forEach((dir) => {

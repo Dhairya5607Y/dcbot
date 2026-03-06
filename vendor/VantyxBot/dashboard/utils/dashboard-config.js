@@ -7,7 +7,7 @@ const config = {
   PROJECT_VERSION: process.env.NEXT_PUBLIC_PROJECT_VERSION || process.env.PROJECT_VERSION || "1.0",
   LINKS: {
     SUPPORT: process.env.NEXT_PUBLIC_LINK_SUPPORT || "",
-    INVITE: process.env.NEXT_PUBLIC_LINK_INVITE || "",
+    INVITE: process.env.NEXT_PUBLIC_LINK_INVITE || "https://discord.com/api/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=8&scope=bot%20applications.commands",
     WEBSITE: process.env.NEXT_PUBLIC_LINK_WEBSITE || "",
     TERMS: process.env.NEXT_PUBLIC_LINK_TERMS || "/terms",
     PRIVACY: process.env.NEXT_PUBLIC_LINK_PRIVACY || "/privacy",
