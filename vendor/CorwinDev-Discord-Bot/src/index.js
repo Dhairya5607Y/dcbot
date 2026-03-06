@@ -169,7 +169,7 @@ manager.on('shardCreate', shard => {
 });
 
 
-manager.spawn({ timeout: 90000 }); // Increase timeout to 90 seconds for Render's slow startup
+manager.spawn({ timeout: 300000 }); // Increase timeout to 5 minutes for Render's free tier startup
 
 
 // Webhooks

@@ -180,7 +180,13 @@ fs.readdirSync('./src/handlers').forEach((dir) => {
     });
 });
 
-client.login(process.env.DISCORD_TOKEN);
+console.log(chalk.blue(chalk.bold(`System`)), (chalk.white(`>>`)), (chalk.green(`Handlers loaded. Logging in to Discord`)), (chalk.white(`...`)));
+client.login(process.env.DISCORD_TOKEN).then(() => {
+    console.log(chalk.blue(chalk.bold(`System`)), (chalk.white(`>>`)), (chalk.green(`Login successful!`)));
+}).catch(err => {
+    console.error(chalk.red(`[ERROR]`), chalk.white(`>>`), chalk.red(`Login failed!`), chalk.white(`>>`), chalk.red(`Error: ${err}`));
+    process.exit(1);
+});
 
 process.on('unhandledRejection', error => {
     console.error('Unhandled promise rejection:', error);
