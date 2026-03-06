@@ -7,7 +7,9 @@ async function connect() {
         console.log(chalk.blue(chalk.bold(`Database`)), (chalk.white(`>>`)), chalk.red(`MongoDB`), chalk.green(`is connecting...`))
         const connectionString = process.env.MONGO_URI || process.env.MONGO_TOKEN;
         if (!connectionString) {
-            throw new Error("No MongoDB connection string provided in environment variables (MONGO_URI or MONGO_TOKEN)");
+            console.log(chalk.red(`[MISSING CONFIG]`), chalk.white(`>>`), chalk.yellow(`MongoDB connection string not found.`));
+            console.log(chalk.blue(`[INSTRUCTION]`), chalk.white(`>>`), chalk.green(`Please set MONGO_URI in your Render Dashboard environment variables.`));
+            throw new Error("MONGO_URI environment variable is missing.");
         }
         await mongoose.connect(connectionString, {
             useNewUrlParser: true,
