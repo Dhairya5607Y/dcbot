@@ -1605,10 +1605,16 @@ class Dashboard {
     start() {
         try {
             const port = config_1.default.dashboard.port;
+            console.log(`[Dashboard] Attempting to start dashboard on port ${port}...`);
+            console.log(`[Dashboard] Port type: ${typeof port}, value: ${JSON.stringify(port)}`);
+            console.log(`[Dashboard] Full config:`, JSON.stringify(config_1.default.dashboard));
+            
             this.app.listen(port, '0.0.0.0', () => {
                 console.log(`Dashboard running on port ${port}`);
                 console.log(`Dashboard accessible at http://0.0.0.0:${port}`);
             });
+            
+            console.log(`[Dashboard] listen() called successfully`);
         }
         catch (error) {
             console.error('Failed to start dashboard:', error);
