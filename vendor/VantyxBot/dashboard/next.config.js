@@ -1,14 +1,13 @@
 /** @type {import('next').NextConfig} */
 
 const path = require("path");
-const config = require("./config");
-const apiURL = config.API_URL || "http://localhost";
-const { hostname } = new URL(apiURL);
+
+// Use env vars directly if available to avoid requirement of config.js during build if possible
+const API_URL = process.env.API_URL || "http://localhost";
+const API_PORT = process.env.API_PORT || "4000";
+const { hostname } = new URL(API_URL);
 
 const nextConfig = {
-  turbopack: {
-    root: path.join(__dirname, ".."),
-  },
   images: {
     remotePatterns: [
       {
@@ -28,14 +27,14 @@ const nextConfig = {
       {
         protocol: "http",
         hostname,
-        port: config.API_PORT ? config.API_PORT.toString() : "",
+        port: API_PORT.toString(),
         pathname: "/**",
       },
       // Api https
       {
         protocol: "https",
         hostname,
-        port: config.API_PORT ? config.API_PORT.toString() : "",
+        port: API_PORT.toString(),
         pathname: "/**",
       },
     ],
