@@ -1,5 +1,5 @@
 services:
-  - type: worker
+  - type: web
     name: lr7-bot-corwindev
     env: node
     region: oregon
@@ -7,6 +7,8 @@ services:
     buildCommand: cd vendor/CorwinDev-Discord-Bot && npm install
     startCommand: cd vendor/CorwinDev-Discord-Bot && npm start
     envVars:
+      - key: PORT
+        value: "10000"
       - key: NODE_ENV
         value: production
       - key: DISCORD_TOKEN
