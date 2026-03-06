@@ -1,0 +1,129 @@
+<%- contentFor('body') %>
+
+<div class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl shadow-lg mb-6 overflow-hidden animate-fade-in">
+    <div class="relative p-6 md:p-8">
+        <div class="absolute right-0 top-0 opacity-10">
+            <i class="fas fa-brain fa-10x"></i>
+        </div>
+        <div class="relative z-10">
+            <h1 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">AI Moderation</h1>
+            <p class="text-purple-100 mb-4 max-w-2xl">
+                Enhance your server's security with AI-powered toxicity and sentiment analysis.
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 space-y-6">
+        <!-- AI Settings -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">AI Sensitivity</h2>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="aiEnabled" class="sr-only peer" <%= settings.aiModeration?.enabled ? 'checked' : '' %>>
+                    <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
+                </label>
+            </div>
+
+            <div class="space-y-6 ai-controls <%= settings.aiModeration?.enabled ? '' : 'opacity-50 pointer-events-none' %>">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Toxicity Threshold (0.0 - 1.0)</label>
+                    <input type="range" id="toxicityThreshold" min="0" max="1" step="0.1" value="<%= settings.aiModeration?.toxicityThreshold || 0.7 %>" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-purple-600">
+                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>Lax (0.0)</span>
+                        <span id="toxicityValue"><%= settings.aiModeration?.toxicityThreshold || 0.7 %></span>
+                        <span>Strict (1.0)</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sentiment Threshold (-1.0 to 1.0)</label>
+                    <input type="range" id="sentimentThreshold" min="-1" max="1" step="0.1" value="<%= settings.aiModeration?.sentimentThreshold || -0.5 %>" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-purple-600">
+                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>Negative (-1.0)</span>
+                        <span id="sentimentValue"><%= settings.aiModeration?.sentimentThreshold || -0.5 %></span>
+                        <span>Positive (1.0)</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Action for Toxic Content</label>
+                        <select id="toxicAction" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5">
+                            <option value="none" <%= settings.aiModeration?.actions?.toxic === 'none' ? 'selected' : '' %>>None (Log only)</option>
+                            <option value="warn" <%= settings.aiModeration?.actions?.toxic === 'warn' ? 'selected' : '' %>>Warn User</option>
+                            <option value="mute" <%= settings.aiModeration?.actions?.toxic === 'mute' ? 'selected' : '' %>>Mute User</option>
+                            <option value="delete" <%= settings.aiModeration?.actions?.toxic === 'delete' ? 'selected' : '' %>>Delete Message</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Action for Negative Sentiment</label>
+                        <select id="negativeAction" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5">
+                            <option value="none" <%= settings.aiModeration?.actions?.negative === 'none' ? 'selected' : '' %>>None</option>
+                            <option value="warn" <%= settings.aiModeration?.actions?.negative === 'warn' ? 'selected' : '' %>>Warn User</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="space-y-6">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 sticky top-6">
+            <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6">Actions</h2>
+            <button id="saveAiSettings" class="w-full flex items-center justify-center px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
+                <i class="fas fa-save mr-2"></i> Save AI Settings
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const aiEnabled = document.getElementById('aiEnabled');
+    const toxicityThreshold = document.getElementById('toxicityThreshold');
+    const sentimentThreshold = document.getElementById('sentimentThreshold');
+    const toxicityValue = document.getElementById('toxicityValue');
+    const sentimentValue = document.getElementById('sentimentValue');
+    const saveButton = document.getElementById('saveAiSettings');
+
+    toxicityThreshold.addEventListener('input', () => toxicityValue.textContent = toxicityThreshold.value);
+    sentimentThreshold.addEventListener('input', () => sentimentValue.textContent = sentimentThreshold.value);
+
+    aiEnabled.addEventListener('change', function() {
+        const controls = document.querySelector('.ai-controls');
+        if (this.checked) controls.classList.remove('opacity-50', 'pointer-events-none');
+        else controls.classList.add('opacity-50', 'pointer-events-none');
+    });
+
+    saveButton.addEventListener('click', async function() {
+        const settings = {
+            enabled: aiEnabled.checked,
+            toxicityThreshold: parseFloat(toxicityThreshold.value),
+            sentimentThreshold: parseFloat(sentimentThreshold.value),
+            actions: {
+                toxic: document.getElementById('toxicAction').value,
+                negative: document.getElementById('negativeAction').value
+            }
+        };
+
+        try {
+            saveButton.disabled = true;
+            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+            const response = await fetch('/api/aimod/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings)
+            });
+            const data = await response.json();
+            if (data.success) showToast('AI settings saved!', 'success');
+        } catch (e) {
+            showToast('Error saving AI settings', 'error');
+        } finally {
+            saveButton.disabled = false;
+            saveButton.innerHTML = '<i class="fas fa-save mr-2"></i> Save AI Settings';
+        }
+    });
+});
+</script>

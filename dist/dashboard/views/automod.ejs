@@ -1,0 +1,113 @@
+<%- contentFor('body') %>
+
+<div class="bg-gradient-to-r from-red-600 to-red-800 text-white rounded-xl shadow-lg mb-6 overflow-hidden animate-fade-in">
+    <div class="relative p-6 md:p-8">
+        <div class="absolute right-0 top-0 opacity-10">
+            <i class="fas fa-robot fa-10x"></i>
+        </div>
+        <div class="relative z-10">
+            <h1 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-2"><%= locale.dashboard.navigation.automod %></h1>
+            <p class="text-red-100 mb-4 max-w-2xl">
+                Advanced automatic moderation system to keep your server safe and clean.
+            </p>
+            
+            <div class="flex flex-wrap gap-3 mt-4">
+                <div class="flex items-center gap-2 bg-white/20 rounded-full px-4 py-1.5">
+                    <div class="h-2.5 w-2.5 rounded-full <%= settings.automod?.enabled ? 'bg-green-400 animate-pulse' : 'bg-red-400' %>"></div>
+                    <span class="text-sm font-medium"><%= settings.automod?.enabled ? 'Active' : 'Disabled' %></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main Settings -->
+    <div class="lg:col-span-2 space-y-6">
+        <!-- System Control -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white">System Status</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Enable or disable the automod system</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="automodEnabled" class="sr-only peer" <%= settings.automod?.enabled ? 'checked' : '' %>>
+                    <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 dark:peer-focus:ring-red-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-red-600"></div>
+                </label>
+            </div>
+        </div>
+
+        <!-- Rules -->
+        <div class="space-y-4 automod-controls <%= settings.automod?.enabled ? '' : 'opacity-50 pointer-events-none' %>">
+            <% const rules = [
+                { id: 'links', name: 'Link Blocking', icon: 'fa-link', desc: 'Automatically block external links.' },
+                { id: 'invites', name: 'Invite Blocking', icon: 'fa-user-plus', desc: 'Block Discord server invite links.' },
+                { id: 'mentions', name: 'Mass Mentions', icon: 'fa-at', desc: 'Prevent mass user or role mentions.' },
+                { id: 'badWords', name: 'Bad Words Filter', icon: 'fa-comment-slash', desc: 'Filter out specific offensive words.' },
+                { id: 'caps', name: 'Excessive Caps', icon: 'fa-font', desc: 'Prevent messages with too many capital letters.' }
+            ] %>
+
+            <% rules.forEach(rule => { %>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border-l-4 border-red-500">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-lg">
+                                <i class="fas <%= rule.icon %>"></i>
+                            </div>
+                            <h3 class="font-bold text-gray-800 dark:text-white"><%= rule.name %></h3>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="<%= rule.id %>Enabled" class="sr-only peer" <%= settings.automod?.rules?.[rule.id]?.enabled ? 'checked' : '' %>>
+                            <div class="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-red-600"></div>
+                        </label>
+                    </div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4"><%= rule.desc %></p>
+                    
+                    <div class="space-y-4 rule-settings <%= settings.automod?.rules?.[rule.id]?.enabled ? '' : 'hidden' %>">
+                        <% if (rule.id === 'mentions') { %>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mention Limit</label>
+                                <input type="number" id="mentionsLimit" value="<%= settings.automod?.rules?.mentions?.limit || 5 %>" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5">
+                            </div>
+                        <% } else if (rule.id === 'badWords') { %>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Forbidden Words (Comma separated)</label>
+                                <textarea id="badWordsList" rows="2" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5"><%= (settings.automod?.rules?.badWords?.words || []).join(', ') %></textarea>
+                            </div>
+                        <% } else if (rule.id === 'caps') { %>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Caps Percentage Limit (%)</label>
+                                <input type="number" id="capsLimit" value="<%= settings.automod?.rules?.caps?.limit || 70 %>" min="1" max="100" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5">
+                            </div>
+                        <% } %>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Action</label>
+                            <select class="rule-action w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5" id="<%= rule.id %>Action">
+                                <option value="delete" <%= settings.automod?.rules?.[rule.id]?.action === 'delete' ? 'selected' : '' %>>Delete Message</option>
+                                <option value="warn" <%= settings.automod?.rules?.[rule.id]?.action === 'warn' ? 'selected' : '' %>>Warn User</option>
+                                <option value="delete_warn" <%= settings.automod?.rules?.[rule.id]?.action === 'delete_warn' ? 'selected' : '' %>>Delete & Warn</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="space-y-6">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 sticky top-6">
+            <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6">Actions</h2>
+            <div class="space-y-4">
+                <button id="saveAutomodSettings" class="w-full flex items-center justify-center px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    <i class="fas fa-save mr-2"></i>
+                    Save Settings
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/automod.js"></script>

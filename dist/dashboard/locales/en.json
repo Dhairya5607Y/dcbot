@@ -19,6 +19,20 @@
             "tempChannels": "Temp Channels",
             "autoReply": "Auto Reply",
             "suggestions": "Suggestions",
+            "welcome": "Welcome System",
+            "selectRoles": "Role Selection",
+            "games": "Games",
+            "automod": "AutoMod",
+            "autoLines": "Auto Lines",
+            "leveling": "Leveling",
+            "economy": "Economy",
+            "verification": "Verification",
+            "serverLock": "Server Lock",
+            "aiModeration": "AI Moderation",
+            "socialIntegration": "Social Integrations",
+            "webhooks": "Custom Webhooks",
+            "roleManagement": "Role Management",
+            "system": "System Settings",
             "docs": "Documentation"
         },
         "stats": {
@@ -723,6 +737,66 @@
                     "management": "Staff Management",
                     "categories": "Category System",
                     "logging": "Comprehensive Logging"
+                }
+            },
+            "welcome": {
+                "title": "Welcome System",
+                "description": "Customizable welcome messages and embeds for new members.",
+                "features": {
+                    "embeds": "Rich Embeds",
+                    "dm": "DM Welcome",
+                    "variables": "Dynamic Variables",
+                    "channels": "Channel Routing"
+                }
+            },
+            "selectRoles": {
+                "title": "Role Selection",
+                "description": "Interactive button-based role assignment system.",
+                "features": {
+                    "buttons": "Button Interaction",
+                    "groups": "Role Groups",
+                    "customization": "Custom Labels",
+                    "easy": "Easy Management"
+                }
+            },
+            "games": {
+                "title": "Games",
+                "description": "Fun interactive games with global leaderboards.",
+                "features": {
+                    "trivia": "Trivia Games",
+                    "counting": "Counting Channel",
+                    "leaderboards": "Global Stats",
+                    "engagement": "High Engagement"
+                }
+            },
+            "automod": {
+                "title": "AutoMod",
+                "description": "Advanced automatic moderation for links, invites, and more.",
+                "features": {
+                    "links": "Link Blocking",
+                    "invites": "Invite Blocking",
+                    "caps": "Caps Filtering",
+                    "mentions": "Mass Mention Prevention"
+                }
+            },
+            "autoLines": {
+                "title": "Auto Lines",
+                "description": "Scheduled recurring messages for announcements or reminders.",
+                "features": {
+                    "intervals": "Custom Intervals",
+                    "multi": "Multiple Channels",
+                    "random": "Random Messages",
+                    "automated": "Fully Automated"
+                }
+            },
+            "leveling": {
+                "title": "Leveling",
+                "description": "Engaging XP system with level-up rewards and roles.",
+                "features": {
+                    "xp": "XP Tracking",
+                    "rewards": "Role Rewards",
+                    "leaderboards": "Global Ranking",
+                    "custom": "Custom XP Curves"
                 }
             }
         },

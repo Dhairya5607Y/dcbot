@@ -1,0 +1,114 @@
+<%- contentFor('body') %>
+
+<div class="bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-xl shadow-lg mb-6 overflow-hidden animate-fade-in">
+    <div class="relative p-6 md:p-8">
+        <div class="absolute right-0 top-0 opacity-10">
+            <i class="fas fa-gamepad fa-10x"></i>
+        </div>
+        <div class="relative z-10">
+            <h1 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-2"><%= locale.dashboard.navigation.games %></h1>
+            <p class="text-orange-100 mb-4 max-w-2xl">
+                Engage your community with interactive games and leaderboards.
+            </p>
+            
+            <div class="flex flex-wrap gap-3 mt-4">
+                <div class="flex items-center gap-2 bg-white/20 rounded-full px-4 py-1.5">
+                    <div class="h-2.5 w-2.5 rounded-full <%= settings.games?.enabled ? 'bg-green-400 animate-pulse' : 'bg-red-400' %>"></div>
+                    <span class="text-sm font-medium"><%= settings.games?.enabled ? 'Active' : 'Disabled' %></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main Settings -->
+    <div class="lg:col-span-2 space-y-6">
+        <!-- System Control -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white">System Status</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Enable or disable the games system</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="gamesEnabled" class="sr-only peer" <%= settings.games?.enabled ? 'checked' : '' %>>
+                    <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 dark:peer-focus:ring-orange-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-orange-600"></div>
+                </label>
+            </div>
+
+            <div class="space-y-4 games-controls <%= settings.games?.enabled ? '' : 'opacity-50 pointer-events-none' %>">
+                <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div>
+                        <h3 class="font-bold text-gray-800 dark:text-white">Global Leaderboard</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Enable global tracking across all games</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="leaderboardEnabled" class="sr-only peer" <%= settings.games?.leaderboard?.enabled ? 'checked' : '' %>>
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 dark:peer-focus:ring-orange-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-orange-600"></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Categories -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 games-controls <%= settings.games?.enabled ? '' : 'opacity-50 pointer-events-none' %>">
+            <!-- Trivia -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-lg">
+                            <i class="fas fa-question-circle"></i>
+                        </div>
+                        <h3 class="font-bold text-gray-800 dark:text-white">Trivia</h3>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="triviaEnabled" class="sr-only peer" <%= settings.games?.categories?.trivia?.enabled ? 'checked' : '' %>>
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Users can play trivia by using the /trivia command.</p>
+            </div>
+
+            <!-- Counting -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-lg">
+                            <i class="fas fa-sort-numeric-up"></i>
+                        </div>
+                        <h3 class="font-bold text-gray-800 dark:text-white">Counting</h3>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="countingEnabled" class="sr-only peer" <%= settings.games?.categories?.counting?.enabled ? 'checked' : '' %>>
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
+                    </label>
+                </div>
+                <div class="space-y-4">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Set a channel where members count together.</p>
+                    <select id="countingChannel" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-green-500 focus:border-green-500 block p-2.5">
+                        <option value="">Select a channel</option>
+                        <% channels.forEach(channel => { %>
+                            <option value="<%= channel.id %>" <%= settings.games?.categories?.counting?.channelId === channel.id ? 'selected' : '' %>># <%= channel.name %></option>
+                        <% }) %>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="space-y-6">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 sticky top-6">
+            <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6">Actions</h2>
+            <div class="space-y-4">
+                <button id="saveGamesSettings" class="w-full flex items-center justify-center px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    <i class="fas fa-save mr-2"></i>
+                    Save Settings
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/games.js"></script>

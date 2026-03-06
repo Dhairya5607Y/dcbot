@@ -1,0 +1,139 @@
+<%- contentFor('body') %>
+
+<div class="bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-xl shadow-lg mb-6 overflow-hidden animate-fade-in">
+    <div class="relative p-6 md:p-8">
+        <div class="absolute right-0 top-0 opacity-10">
+            <i class="fas fa-link fa-10x"></i>
+        </div>
+        <div class="relative z-10">
+            <h1 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">Custom Webhooks</h1>
+            <p class="text-green-100 mb-4 max-w-2xl">
+                Create custom endpoints to receive data from external services and post to Discord.
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-bold text-gray-800 dark:text-white">Webhook Endpoints</h2>
+        <button id="addWebhook" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors">
+            <i class="fas fa-plus mr-2"></i> New Webhook
+        </button>
+    </div>
+
+    <div id="webhooksList" class="space-y-4">
+        <% (settings.webhooks?.endpoints || []).forEach((webhook, index) => { %>
+            <div class="webhook-item border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Webhook Name</label>
+                        <input type="text" class="webhook-name w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5" value="<%= webhook.name %>">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Target Channel</label>
+                        <select class="webhook-channel w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5">
+                            <% channels.forEach(c => { %>
+                                <option value="<%= c.id %>" <%= webhook.channelId === c.id ? 'selected' : '' %>># <%= c.name %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Webhook URL (Read Only)</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="text" readonly class="w-full bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-500 text-xs rounded-lg p-2.5" value="/api/webhooks/trigger/<%= webhook.id %>">
+                            <button onclick="copyToClipboard(this.previousElementSibling.value)" class="p-2.5 text-blue-600 hover:bg-blue-50 rounded-lg"><i class="fas fa-copy"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Message Template (Placeholders: {data})</label>
+                    <textarea class="webhook-template w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5" rows="2"><%= webhook.template %></textarea>
+                </div>
+                <div class="flex justify-end">
+                    <button onclick="this.closest('.webhook-item').remove()" class="text-red-600 hover:text-red-700 text-sm font-bold"><i class="fas fa-trash mr-1"></i> Delete Webhook</button>
+                </div>
+                <input type="hidden" class="webhook-id" value="<%= webhook.id %>">
+            </div>
+        <% }) %>
+    </div>
+
+    <div class="mt-8">
+        <button id="saveWebhooks" class="w-full flex items-center justify-center px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
+            <i class="fas fa-save mr-2"></i> Save Webhooks
+        </button>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    const fullUrl = window.location.origin + text;
+    navigator.clipboard.writeText(fullUrl).then(() => showToast('URL copied to clipboard!', 'success'));
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const addWebhook = document.getElementById('addWebhook');
+    const saveButton = document.getElementById('saveWebhooks');
+    const channelOptions = `<% channels.forEach(c => { %><option value="<%= c.id %>"># <%= c.name %></option><% }) %>`;
+
+    addWebhook.addEventListener('click', () => {
+        const id = Math.random().toString(36).substring(2, 15);
+        const div = document.createElement('div');
+        div.className = 'webhook-item border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-4';
+        div.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Webhook Name</label>
+                    <input type="text" class="webhook-name w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5" placeholder="My Service">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Target Channel</label>
+                    <select class="webhook-channel w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5">${channelOptions}</select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Webhook URL (Save to see)</label>
+                    <input type="text" readonly class="w-full bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-500 text-xs rounded-lg p-2.5" value="Click save to generate URL">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Message Template</label>
+                <textarea class="webhook-template w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5" rows="2" placeholder="Received: {data}"></textarea>
+            </div>
+            <div class="flex justify-end">
+                <button onclick="this.closest('.webhook-item').remove()" class="text-red-600 hover:text-red-700 text-sm font-bold"><i class="fas fa-trash mr-1"></i> Delete Webhook</button>
+            </div>
+            <input type="hidden" class="webhook-id" value="${id}">
+        `;
+        document.getElementById('webhooksList').appendChild(div);
+    });
+
+    saveButton.addEventListener('click', async function() {
+        const endpoints = Array.from(document.querySelectorAll('.webhook-item')).map(item => ({
+            id: item.querySelector('.webhook-id').value,
+            name: item.querySelector('.webhook-name').value,
+            channelId: item.querySelector('.webhook-channel').value,
+            template: item.querySelector('.webhook-template').value
+        }));
+
+        try {
+            saveButton.disabled = true;
+            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+            const response = await fetch('/api/webhooks/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled: true, endpoints })
+            });
+            const data = await response.json();
+            if (data.success) {
+                showToast('Webhooks saved!', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            }
+        } catch (e) {
+            showToast('Error saving webhooks', 'error');
+        } finally {
+            saveButton.disabled = false;
+            saveButton.innerHTML = '<i class="fas fa-save mr-2"></i> Save Webhooks';
+        }
+    });
+});
+</script>

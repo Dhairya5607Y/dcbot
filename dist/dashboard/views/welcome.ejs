@@ -1,0 +1,176 @@
+<%- contentFor('body') %>
+
+<div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow-lg mb-6 overflow-hidden animate-fade-in">
+    <div class="relative p-6 md:p-8">
+        <div class="absolute right-0 top-0 opacity-10">
+            <i class="fas fa-hand-wave fa-10x"></i>
+        </div>
+        <div class="relative z-10">
+            <h1 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-2"><%= locale.dashboard.navigation.welcome %></h1>
+            <p class="text-blue-100 mb-4 max-w-2xl">
+                Configure how the bot welcomes new members to your server.
+            </p>
+            
+            <div class="flex flex-wrap gap-3 mt-4">
+                <div class="flex items-center gap-2 bg-white/20 rounded-full px-4 py-1.5">
+                    <div class="h-2.5 w-2.5 rounded-full <%= settings.welcome?.enabled ? 'bg-green-400 animate-pulse' : 'bg-red-400' %>"></div>
+                    <span class="text-sm font-medium"><%= settings.welcome?.enabled ? 'Active' : 'Disabled' %></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main Settings -->
+    <div class="lg:col-span-2 space-y-6">
+        <!-- System Control -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white">System Status</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Enable or disable the welcome system</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="welcomeEnabled" class="sr-only peer" <%= settings.welcome?.enabled ? 'checked' : '' %>>
+                    <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                </label>
+            </div>
+
+            <div class="space-y-4 welcome-controls <%= settings.welcome?.enabled ? '' : 'opacity-50 pointer-events-none' %>">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Welcome Channel</label>
+                    <select id="welcomeChannel" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                        <option value="">Select a channel</option>
+                        <% channels.forEach(channel => { %>
+                            <option value="<%= channel.id %>" <%= settings.welcome?.channelId === channel.id ? 'selected' : '' %>># <%= channel.name %></option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Welcome Message</label>
+                    <textarea id="welcomeMessage" rows="3" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5" placeholder="Welcome {user} to {server}!"><%= settings.welcome?.message %></textarea>
+                    <p class="mt-2 text-xs text-gray-500">Variables: {user}, {server}, {memberCount}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Embed Settings -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 welcome-controls <%= settings.welcome?.enabled ? '' : 'opacity-50 pointer-events-none' %>">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white">Embed Settings</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Customize the welcome embed appearance</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="welcomeEmbedEnabled" class="sr-only peer" <%= settings.welcome?.embed?.enabled ? 'checked' : '' %>>
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                </label>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 embed-controls <%= settings.welcome?.embed?.enabled ? '' : 'opacity-50 pointer-events-none' %>">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Embed Title</label>
+                    <input type="text" id="welcomeEmbedTitle" value="<%= settings.welcome?.embed?.title %>" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Embed Color</label>
+                    <input type="color" id="welcomeEmbedColor" value="<%= settings.welcome?.embed?.color || '#3498db' %>" class="w-full h-10 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Embed Description</label>
+                    <textarea id="welcomeEmbedDescription" rows="3" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5"><%= settings.welcome?.embed?.description %></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Thumbnail URL</label>
+                    <input type="text" id="welcomeEmbedThumbnail" value="<%= settings.welcome?.embed?.thumbnail === true ? 'User Avatar' : settings.welcome?.embed?.thumbnail %>" placeholder="https://..." class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Image URL</label>
+                    <input type="text" id="welcomeEmbedImage" value="<%= settings.welcome?.embed?.image %>" placeholder="https://..." class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Footer Text</label>
+                    <input type="text" id="welcomeEmbedFooter" value="<%= settings.welcome?.embed?.footer %>" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                </div>
+                <div class="flex items-center space-x-4 pt-8">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" id="welcomeEmbedTimestamp" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600" <%= settings.welcome?.embed?.timestamp ? 'checked' : '' %>>
+                        <span class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">Show Timestamp</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- DM Welcome -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 welcome-controls <%= settings.welcome?.enabled ? '' : 'opacity-50 pointer-events-none' %>">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white">DM Welcome</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Send a private message to new members</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="welcomeDmEnabled" class="sr-only peer" <%= settings.welcome?.dm?.enabled ? 'checked' : '' %>>
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                </label>
+            </div>
+
+            <div class="dm-controls <%= settings.welcome?.dm?.enabled ? '' : 'opacity-50 pointer-events-none' %>">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">DM Message</label>
+                <textarea id="welcomeDmMessage" rows="3" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5" placeholder="Welcome to {server}!"><%= settings.welcome?.dm?.message %></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview & Save -->
+    <div class="space-y-6">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 sticky top-6">
+            <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6">Actions</h2>
+            <div class="space-y-4">
+                <button id="saveWelcomeSettings" class="w-full flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    <i class="fas fa-save mr-2"></i>
+                    Save Settings
+                </button>
+                <button id="testWelcome" class="w-full flex items-center justify-center px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold rounded-xl transition-all duration-300">
+                    <i class="fas fa-paper-plane mr-2"></i>
+                    Test Welcome
+                </button>
+            </div>
+
+            <div class="mt-8">
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Live Preview</h3>
+                <div id="embedPreview" class="bg-[#2f3136] rounded-lg p-4 text-white border-l-4 border-blue-500 hidden">
+                    <div class="flex items-start space-x-3">
+                        <img id="previewAvatar" src="/images/logo.png" class="w-10 h-10 rounded-full" alt="Avatar">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-2 mb-1">
+                                <span class="font-bold text-sm">LR7 Bot</span>
+                                <span class="bg-blue-500 text-[10px] px-1 rounded uppercase">Bot</span>
+                            </div>
+                            <div id="previewEmbedContent" class="bg-[#36393f] p-3 rounded border-l-4 border-blue-500">
+                                <h4 id="previewTitle" class="font-bold text-base mb-1"></h4>
+                                <p id="previewDescription" class="text-sm text-gray-300 whitespace-pre-wrap"></p>
+                                <img id="previewImage" src="" class="mt-2 rounded-lg max-h-48 w-full object-cover hidden" alt="Embed Image">
+                                <div class="mt-2 flex items-center text-[10px] text-gray-400">
+                                    <img id="previewFooterIcon" src="" class="w-4 h-4 rounded-full mr-2 hidden" alt="Footer Icon">
+                                    <span id="previewFooterText"></span>
+                                    <span id="previewTimestamp" class="ml-1 hidden">• Today at 12:00 PM</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="textPreview" class="bg-[#36393f] rounded-lg p-4 text-white mt-4 hidden">
+                    <div class="flex items-center space-x-2 mb-1">
+                        <span class="font-bold text-sm">LR7 Bot</span>
+                        <span class="bg-blue-500 text-[10px] px-1 rounded uppercase">Bot</span>
+                    </div>
+                    <p id="previewTextMessage" class="text-sm whitespace-pre-wrap"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/welcome.js"></script>

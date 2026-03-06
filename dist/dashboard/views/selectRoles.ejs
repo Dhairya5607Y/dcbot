@@ -1,0 +1,123 @@
+<%- contentFor('body') %>
+
+<div class="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl shadow-lg mb-6 overflow-hidden animate-fade-in">
+    <div class="relative p-6 md:p-8">
+        <div class="absolute right-0 top-0 opacity-10">
+            <i class="fas fa-id-badge fa-10x"></i>
+        </div>
+        <div class="relative z-10">
+            <h1 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-2"><%= locale.dashboard.navigation.selectRoles %></h1>
+            <p class="text-purple-100 mb-4 max-w-2xl">
+                Create interactive role selection menus for your members.
+            </p>
+            
+            <div class="flex flex-wrap gap-3 mt-4">
+                <div class="flex items-center gap-2 bg-white/20 rounded-full px-4 py-1.5">
+                    <div class="h-2.5 w-2.5 rounded-full <%= settings.selectRoles?.enabled ? 'bg-green-400 animate-pulse' : 'bg-red-400' %>"></div>
+                    <span class="text-sm font-medium"><%= settings.selectRoles?.enabled ? 'Active' : 'Disabled' %></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main Settings -->
+    <div class="lg:col-span-2 space-y-6">
+        <!-- System Control -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white">System Status</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Enable or disable the role selection system</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="selectRolesEnabled" class="sr-only peer" <%= settings.selectRoles?.enabled ? 'checked' : '' %>>
+                    <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
+                </label>
+            </div>
+
+            <div class="space-y-4 select-roles-controls <%= settings.selectRoles?.enabled ? '' : 'opacity-50 pointer-events-none' %>">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Embed Title</label>
+                    <input type="text" id="selectRolesTitle" value="<%= settings.selectRoles?.embed?.title %>" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Embed Description</label>
+                    <textarea id="selectRolesDescription" rows="3" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5"><%= settings.selectRoles?.embed?.description %></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Embed Color</label>
+                    <input type="color" id="selectRolesColor" value="<%= settings.selectRoles?.embed?.color || '#3498db' %>" class="w-full h-10 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer">
+                </div>
+            </div>
+        </div>
+
+        <!-- Role Groups -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 select-roles-controls <%= settings.selectRoles?.enabled ? '' : 'opacity-50 pointer-events-none' %>">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white">Role Groups</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Add groups of roles that users can select from</p>
+                </div>
+                <button id="addRoleGroup" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-lg transition-colors">
+                    <i class="fas fa-plus mr-2"></i> Add Group
+                </button>
+            </div>
+
+            <div id="roleGroupsList" class="space-y-4">
+                <% (settings.selectRoles?.groups || []).forEach((group, groupIndex) => { %>
+                    <div class="role-group bg-gray-50 dark:bg-gray-700 p-4 rounded-xl border border-gray-200 dark:border-gray-600" data-index="<%= groupIndex %>">
+                        <div class="flex items-center justify-between mb-4">
+                            <input type="text" class="group-name bg-transparent border-none text-lg font-bold text-gray-800 dark:text-white focus:ring-0 p-0" value="<%= group.name %>" placeholder="Group Name">
+                            <button class="remove-group text-red-500 hover:text-red-700">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        <div class="roles-list space-y-2">
+                            <% (group.roles || []).forEach((role, roleIndex) => { %>
+                                <div class="role-item flex items-center space-x-2 bg-white dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-600" data-index="<%= roleIndex %>">
+                                    <select class="role-id flex-1 bg-transparent border-none text-sm text-gray-800 dark:text-white focus:ring-0">
+                                        <% roles.forEach(r => { %>
+                                            <option value="<%= r.id %>" <%= role.roleId === r.id ? 'selected' : '' %>>@ <%= r.name %></option>
+                                        <% }) %>
+                                    </select>
+                                    <input type="text" class="role-label w-24 bg-transparent border-none text-sm text-gray-800 dark:text-white focus:ring-0" value="<%= role.label %>" placeholder="Label">
+                                    <input type="text" class="role-emoji w-16 bg-transparent border-none text-sm text-gray-800 dark:text-white focus:ring-0" value="<%= role.emoji %>" placeholder="Emoji">
+                                    <button class="remove-role text-red-500 hover:text-red-700">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            <% }) %>
+                        </div>
+                        <button class="add-role mt-4 w-full py-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-white text-xs font-bold rounded-lg transition-colors">
+                            <i class="fas fa-plus mr-1"></i> Add Role
+                        </button>
+                    </div>
+                <% }) %>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="space-y-6">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 sticky top-6">
+            <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6">Actions</h2>
+            <div class="space-y-4">
+                <button id="saveSelectRolesSettings" class="w-full flex items-center justify-center px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    <i class="fas fa-save mr-2"></i>
+                    Save Settings
+                </button>
+                <button id="testSelectRoles" class="w-full flex items-center justify-center px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold rounded-xl transition-all duration-300">
+                    <i class="fas fa-paper-plane mr-2"></i>
+                    Send to Discord
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const availableRoles = <%- JSON.stringify(roles) %>;
+</script>
+<script src="/js/selectRoles.js"></script>

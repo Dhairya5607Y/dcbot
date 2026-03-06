@@ -1,0 +1,85 @@
+<%- contentFor('body') %>
+
+<div class="bg-gradient-to-r from-gray-700 to-gray-900 text-white rounded-xl shadow-lg mb-6 overflow-hidden animate-fade-in">
+    <div class="relative p-6 md:p-8">
+        <div class="absolute right-0 top-0 opacity-10">
+            <i class="fas fa-server fa-10x"></i>
+        </div>
+        <div class="relative z-10">
+            <h1 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">System Settings</h1>
+            <p class="text-gray-300 mb-4 max-w-2xl">
+                Manage your bot's core configuration, export settings, and import existing data.
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Export Settings -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+        <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
+            <i class="fas fa-file-export mr-2 text-blue-500"></i> Export Configuration
+        </h2>
+        <div class="space-y-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Download a JSON file containing all your server settings for backup or migration.</p>
+            <button id="exportSettings" class="w-full flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
+                <i class="fas fa-download mr-2"></i> Export settings.json
+            </button>
+        </div>
+    </div>
+
+    <!-- Import Settings -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+        <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
+            <i class="fas fa-file-import mr-2 text-green-500"></i> Import Configuration
+        </h2>
+        <div class="space-y-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Upload a previously exported settings.json file to restore your configuration. <span class="text-red-500 font-bold">Warning: This will overwrite current settings!</span></p>
+            <input type="file" id="importFile" accept=".json" class="hidden">
+            <button id="importSettings" class="w-full flex items-center justify-center px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
+                <i class="fas fa-upload mr-2"></i> Import settings.json
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const exportButton = document.getElementById('exportSettings');
+    const importButton = document.getElementById('importSettings');
+    const importFile = document.getElementById('importFile');
+
+    exportButton.addEventListener('click', function() {
+        window.location.href = '/api/settings/export';
+    });
+
+    importButton.addEventListener('click', () => importFile.click());
+
+    importFile.addEventListener('change', async function() {
+        const file = this.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            try {
+                const settings = JSON.parse(e.target.result);
+                if (confirm('Are you sure you want to import these settings? This will overwrite your current configuration.')) {
+                    const response = await fetch('/api/settings/import', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(settings)
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        showToast('Settings imported successfully! Reloading...', 'success');
+                        setTimeout(() => window.location.reload(), 2000);
+                    }
+                }
+            } catch (err) {
+                showToast('Invalid JSON file', 'error');
+            }
+        };
+        reader.readAsText(file);
+    });
+});
+</script>

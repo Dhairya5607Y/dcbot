@@ -26,79 +26,58 @@
 ### 5. Home Page Updated
 - Added user session info to home route
 
-## ⚠️ TODO - Routes Need Protection
+### 6. Protected Routes ✅
+All dashboard routes are now protected with `requireAdmin` middleware:
 
-The following routes should be protected with `this.requireAdmin.bind(this)` middleware:
+#### Settings & Configuration
+- ✅ `/settings`
+- ✅ `/commands`
+- ✅ `/commands/general`
+- ✅ `/commands/moderation`
+- ✅ `/commands/utility`
 
-### Settings & Configuration
-- `/settings`
-- `/commands`
-- `/commands/general`
-- `/commands/moderation`
-- `/commands/utility`
+#### Logs & Protection
+- ✅ `/logs`
+- ✅ `/protection`
 
-### Logs & Protection
-- `/logs`
-- `/protection`
+#### Features
+- ✅ `/tickets`
+- ✅ `/apply`
+- ✅ `/rules`
+- ✅ `/giveaway`
+- ✅ `/tempchannels`
+- ✅ `/autoreply`
+- ✅ `/suggestions`
+- ✅ `/welcome`
+- ✅ `/selectroles`
+- ✅ `/games`
+- ✅ `/automod`
+- ✅ `/autolines`
+- ✅ `/leveling`
 
-### Features
-- `/tickets`
-- `/apply`
-- `/rules`
-- `/giveaway`
-- `/tempchannels`
-- `/autoreply`
-- `/suggestions`
-- `/welcome`
-- `/selectroles`
-- `/games`
-- `/automod`
-- `/autolines`
-- `/leveling`
-
-### API Endpoints (should also be protected)
-- All `/api/*` routes except public stats
-
-## 📝 Implementation Notes
-
-### How to Protect a Route
-
-Change from:
-```javascript
-this.app.get('/settings', async (_req, res) => {
-```
-
-To:
-```javascript
-this.app.get('/settings', this.requireAdmin.bind(this), async (req, res) => {
-```
-
-Then add `user` and `guild` to the render context:
-```javascript
-res.render('settings', {
-    // ... existing properties
-    user: req.session.user,
-    guild: res.locals.guild
-});
-```
-
-### Environment Variables Required
-
-Add these to your Render dashboard:
-
-```
-DISCORD_CLIENT_SECRET=your_discord_client_secret_here
-CALLBACK_URL=https://lr7-community-bot.onrender.com/auth/callback
-DASHBOARD_DOMAIN=https://lr7-community-bot.onrender.com
-```
-
-### Getting Discord Client Secret
-
-1. Go to https://discord.com/developers/applications
-2. Select your application
-3. Go to OAuth2 section
-4. Copy the Client Secret
-5. Add redirect URL: `https://lr7-community-bot.onrender.com/auth/callback`
+#### API Endpoints
+- ✅ `/api/commands/toggle`
+- ✅ `/api/commands/:command/permissions`
+- ✅ `/api/commands/:command/update`
+- ✅ `/api/commands/:command/settings`
+- ✅ `/api/commands/list`
+- ✅ `/api/roles`
+- ✅ `/api/channels`
+- ✅ `/api/logs/update`
+- ✅ `/api/protection/settings`
+- ✅ `/api/protection/update`
+- ✅ `/api/tickets/settings`
+- ✅ `/api/tickets/:section/settings`
+- ✅ `/api/tickets/sections/add`
+- ✅ `/api/apply/settings`
+- ✅ `/api/apply/positions/add`
+- ✅ `/api/rules/settings`
+- ✅ `/api/giveaway/settings`
+- ✅ `/api/tempchannels/settings`
+- ✅ `/api/autoreply/settings`
+- ✅ `/api/settings/suggestions`
+- ✅ `/api/settings/language`
+- ✅ `/api/settings/autoRoles`
 
 ## 🔒 Security Features
 
@@ -108,6 +87,8 @@ DASHBOARD_DOMAIN=https://lr7-community-bot.onrender.com
 - ✅ Guild membership validation
 - ✅ Access token stored in session
 - ✅ Mutual guild filtering (bot must be in server)
+- ✅ All dashboard routes protected with authentication
+- ✅ All API endpoints protected with authentication
 
 ## 🎨 User Experience
 
@@ -117,14 +98,22 @@ DASHBOARD_DOMAIN=https://lr7-community-bot.onrender.com
 - ✅ Server selection page with guild icons
 - ✅ Automatic redirect to login for protected pages
 - ✅ Remember selected server in session
+- ✅ User and guild context available in all protected routes
 
-## 🚀 Next Steps
+## � Next Steps
 
-1. Protect all routes listed in TODO section
-2. Add environment variables to Render
-3. Test OAuth flow
-4. Test permission checks
-5. Deploy to production
+1. ✅ Protect all routes (COMPLETED)
+2. Add environment variables to Render:
+   - `DISCORD_CLIENT_SECRET` (get from Discord Developer Portal)
+   - `CALLBACK_URL=https://lr7-community-bot.onrender.com/auth/callback`
+   - `DASHBOARD_DOMAIN=https://lr7-community-bot.onrender.com`
+3. Configure Discord OAuth2 redirect URL:
+   - Go to https://discord.com/developers/applications
+   - Select application → OAuth2 → Redirects
+   - Add: `https://lr7-community-bot.onrender.com/auth/callback`
+4. Test OAuth flow
+5. Test permission checks
+6. Deploy to production
 
 ## 📖 Usage
 
@@ -138,3 +127,8 @@ DASHBOARD_DOMAIN=https://lr7-community-bot.onrender.com
 - User session available in `req.session.user`
 - Selected guild available in `req.session.selectedGuild`
 - Guild object available in `res.locals.guild` (after requireAdmin middleware)
+- All routes now pass `user` and `guild` to render context
+
+## 🎯 Implementation Complete
+
+All dashboard routes and API endpoints are now protected with OAuth2 authentication. Only authenticated users who are administrators of their selected server can access and modify settings.

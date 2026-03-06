@@ -88,7 +88,14 @@ const channelCreate_1 = __importDefault(require("./src/logs/channelCreate"));
 const channelDelete_1 = __importDefault(require("./src/logs/channelDelete"));
 const channelUpdate_1 = __importDefault(require("./src/logs/channelUpdate"));
 const cleanupTranscripts_1 = require("./src/ticket/cleanupTranscripts");
-const server_1 = require("./dashboard/server");
+const { handleWelcome } = require('./src/welcome/welcomeHandler');
+const { handleLeveling } = require('./src/leveling/levelingHandler');
+const { handleAutomod } = require('./src/automod/automodHandler');
+const { handleAIModeration } = require('./src/aiMod/aiHandler');
+const { initAutoLines } = require('./src/autoLines/autoLinesHandler');
+const { handleSelectRoles } = require('./src/selectRoles/selectRolesHandler');
+const { IntegrationManager } = require('./src/integrations/integrationManager');
+
 class ModBot extends discord_js_1.Client {
     constructor() {
         super({
@@ -118,6 +125,7 @@ class ModBot extends discord_js_1.Client {
         this.commands = new discord_js_1.Collection();
         this.aliases = new discord_js_1.Collection();
         this.locales = new discord_js_1.Collection();
+        this.snipes = new discord_js_1.Collection();
         const settingsPath = (0, path_1.join)(__dirname, '../settings.json');
         this.settings = JSON.parse((0, fs_1.readFileSync)(settingsPath, 'utf-8'));
         this.defaultLanguage = this.settings.defaultLanguage || 'en';
@@ -186,6 +194,24 @@ class ModBot extends discord_js_1.Client {
             }
             this.deployCommands(slashCommands);
             this.on(discord_js_1.Events.InteractionCreate, async (interaction) => {
+                await handleSelectRoles(interaction, this);
+                
+                // Verification Button Handler
+                if (interaction.isButton() && interaction.customId === 'verify_user') {
+                    const roleId = this.settings.verification?.roleId;
+                    if (!roleId) return interaction.reply({ content: 'Verification is not correctly set up!', ephemeral: true });
+                    
+                    const role = interaction.guild.roles.cache.get(roleId);
+                    if (!role) return interaction.reply({ content: 'Verification role not found!', ephemeral: true });
+                    
+                    if (interaction.member.roles.cache.has(roleId)) {
+                        return interaction.reply({ content: 'You are already verified!', ephemeral: true });
+                    }
+                    
+                    await interaction.member.roles.add(role).catch(console.error);
+                    return interaction.reply({ content: '✅ You have been successfully verified!', ephemeral: true });
+                }
+
                 if (interaction.isButton()) {
                     if (interaction.customId.startsWith('apply_accept_') || interaction.customId.startsWith('apply_reject_')) {
                         try {
@@ -365,6 +391,45 @@ class ModBot extends discord_js_1.Client {
             this.on(discord_js_1.Events.MessageCreate, async (message) => {
                 if (message.author.bot)
                     return;
+
+                const guildId = message.guild?.id;
+                const userId = message.author.id;
+
+                // AFK Check - If user was AFK, remove it
+                const User = require('./src/models/User');
+                if (guildId) {
+                    const afkData = await User.findOne({ guildId, userId });
+                    if (afkData?.afk?.reason) {
+                        afkData.afk = { reason: null, timestamp: null };
+                        await afkData.save();
+                        message.reply(`Welcome back ${message.author}! I've removed your AFK status.`).then(m => setTimeout(() => m.delete(), 5000));
+                        if (message.member?.manageable) {
+                            message.member.setNickname(message.member.displayName.replace('[AFK] ', '')).catch(() => {});
+                        }
+                    }
+
+                    // AFK Check - If someone mentioned an AFK user
+                    const mentionedUsers = message.mentions.users;
+                    for (const [id, user] of mentionedUsers) {
+                        const targetAfk = await User.findOne({ guildId, userId: id });
+                        if (targetAfk?.afk?.reason) {
+                            const timeAgo = `<t:${Math.floor(targetAfk.afk.timestamp.getTime() / 1000)}:R>`;
+                            message.reply(`${user.username} is currently AFK: **${targetAfk.afk.reason}** (${timeAgo})`).then(m => setTimeout(() => m.delete(), 10000));
+                        }
+                    }
+                }
+
+                // Automod
+                const isModerated = await handleAutomod(message, this);
+                if (isModerated) return;
+                
+                // AI Moderation
+                const isAIModerated = await handleAIModeration(message, this);
+                if (isAIModerated) return;
+
+                // Leveling
+                await handleLeveling(message, this);
+
                 if (message.guild && message.member) {
                     await (0, antispamProtection_1.handleMessage)(message);
                 }
@@ -409,7 +474,34 @@ class ModBot extends discord_js_1.Client {
             });
             this.settingsWatcher = new settingsWatcher_1.SettingsWatcher(this);
             this.settingsWatcher.start();
-            this.on(discord_js_1.Events.MessageDelete, messageDelete_1.default);
+            this.on(discord_js_1.Events.MessageDelete, (message) => {
+                if (message.partial || message.author?.bot) return;
+                
+                // Ghost Ping Detection
+                if (this.settings.automod?.rules?.ghostPing?.enabled && message.mentions.users.size > 0) {
+                    const timeDiff = Date.now() - message.createdTimestamp;
+                    if (timeDiff < 60000) { // If deleted within 60 seconds
+                        const embed = new discord_js_1.EmbedBuilder()
+                            .setTitle('👻 Ghost Ping Detected')
+                            .setColor('#ff0000')
+                            .addFields(
+                                { name: 'Author', value: `${message.author} (${message.author.id})`, inline: true },
+                                { name: 'Mentions', value: message.mentions.users.map(u => u.toString()).join(', '), inline: true },
+                                { name: 'Content', value: message.content || '[No text content]' }
+                            )
+                            .setTimestamp();
+                        message.channel.send({ embeds: [embed] }).catch(() => {});
+                    }
+                }
+
+                this.snipes.set(message.channel.id, {
+                    content: message.content,
+                    author: message.author,
+                    image: message.attachments.first()?.proxyURL,
+                    timestamp: Date.now()
+                });
+                (0, messageDelete_1.default)(message);
+            });
             this.on(discord_js_1.Events.MessageUpdate, messageEdit_1.default);
             this.on(discord_js_1.Events.GuildRoleCreate, roleCreate_1.default);
             this.on(discord_js_1.Events.GuildRoleDelete, roleDelete_1.default);
@@ -433,6 +525,15 @@ class ModBot extends discord_js_1.Client {
                 }
             });
             this.on(discord_js_1.Events.GuildMemberAdd, async (member) => {
+                await handleWelcome(member, this);
+                
+                // Auto-roles
+                const autoRoles = this.settings.roleManagement?.autoRoles || [];
+                for (const roleId of autoRoles) {
+                    const role = member.guild.roles.cache.get(roleId);
+                    if (role) await member.roles.add(role).catch(console.error);
+                }
+
                 if (member.user.bot) {
                     try {
                         const auditLogs = await member.guild.fetchAuditLogs({
@@ -587,6 +688,48 @@ class ModBot extends discord_js_1.Client {
                     console.error('Error handling unban protection:', error);
                 }
             });
+            this.on(discord_js_1.Events.MessageReactionAdd, async (reaction, user) => {
+                if (user.bot) return;
+                if (reaction.partial) await reaction.fetch();
+                
+                const reactionRoles = this.settings.roleManagement?.reactionRoles || [];
+                const config = reactionRoles.find(r => r.messageId === reaction.message.id && r.emoji === reaction.emoji.name);
+                
+                if (config) {
+                    const member = reaction.message.guild.members.cache.get(user.id);
+                    const role = reaction.message.guild.roles.cache.get(config.roleId);
+                    if (member && role) await member.roles.add(role).catch(console.error);
+                }
+            });
+
+            this.on(discord_js_1.Events.MessageReactionRemove, async (reaction, user) => {
+                if (user.bot) return;
+                if (reaction.partial) await reaction.fetch();
+                
+                const reactionRoles = this.settings.roleManagement?.reactionRoles || [];
+                const config = reactionRoles.find(r => r.messageId === reaction.message.id && r.emoji === reaction.emoji.name);
+                
+                if (config) {
+                    const member = reaction.message.guild.members.cache.get(user.id);
+                    const role = reaction.message.guild.roles.cache.get(config.roleId);
+                    if (member && role) await member.roles.remove(role).catch(console.error);
+                }
+            });
+            
+            this.on(discord_js_1.Events.GuildMemberUpdate, async (oldMember, newMember) => {
+                if (this.settings.roleManagement?.hierarchyEnforcement) {
+                    const botMember = newMember.guild.members.me;
+                    if (!botMember) return;
+                    
+                    const addedRoles = newMember.roles.cache.filter(role => !oldMember.roles.cache.has(role.id));
+                    addedRoles.forEach(role => {
+                        if (role.position >= botMember.roles.highest.position) {
+                            console.warn(`[Hierarchy Alert] Role "${role.name}" was added to ${newMember.user.tag}, but it is higher than or equal to my highest role!`);
+                        }
+                    });
+                }
+            });
+            
             this.on(discord_js_1.Events.GuildMemberRemove, async (member) => {
                 try {
                     const auditLogs = await member.guild.fetchAuditLogs({
@@ -642,6 +785,14 @@ class ModBot extends discord_js_1.Client {
             this.on(discord_js_1.Events.VoiceStateUpdate, tempChannelHandler_1.handleVoiceStateUpdate);
             await this.login(config_1.default.token);
             console.log(`Logged in as ${this.user?.tag}`);
+            
+            // Initialize auto lines
+            initAutoLines(this);
+            
+            // Initialize integration manager
+            this.integrationManager = new IntegrationManager(this);
+            this.integrationManager.init();
+            
             (0, cleanupTranscripts_1.startTranscriptCleanup)();
         }
         catch (error) {
@@ -673,6 +824,10 @@ class ModBot extends discord_js_1.Client {
                     this.aliases.set(alias, name);
                 }
             }
+            
+            // Re-initialize auto lines
+            initAutoLines(this);
+            
             console.log('Settings reloaded successfully');
         }
         catch (error) {

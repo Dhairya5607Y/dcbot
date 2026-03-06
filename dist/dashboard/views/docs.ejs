@@ -101,20 +101,32 @@
         </h2>
         
         <div class="quick-nav grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <% const features = ['autoReply', 'tempChannels', 'suggestions', 'protection', 'tickets'] %>
+            <% const features = ['autoReply', 'tempChannels', 'suggestions', 'protection', 'tickets', 'welcome', 'selectRoles', 'games', 'automod', 'autoLines', 'leveling'] %>
             <% const featureIcons = {
                 'autoReply': 'reply',
                 'tempChannels': 'volume-up',
                 'suggestions': 'lightbulb',
                 'protection': 'shield-alt',
-                'tickets': 'ticket-alt'
+                'tickets': 'ticket-alt',
+                'welcome': 'hand-wave',
+                'selectRoles': 'id-badge',
+                'games': 'gamepad',
+                'automod': 'robot',
+                'autoLines': 'align-left',
+                'leveling': 'chart-line'
             } %>
             <% const featureColors = {
                 'autoReply': 'blue',
                 'tempChannels': 'green',
                 'suggestions': 'yellow',
                 'protection': 'red',
-                'tickets': 'purple'
+                'tickets': 'purple',
+                'welcome': 'indigo',
+                'selectRoles': 'pink',
+                'games': 'orange',
+                'automod': 'red',
+                'autoLines': 'teal',
+                'leveling': 'blue'
             } %>
             
             <% features.forEach((feature, index) => { %>

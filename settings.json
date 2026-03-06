@@ -747,5 +747,145 @@
                 }
             }
         ]
+    },
+    "welcome": {
+        "enabled": false,
+        "channelId": "",
+        "message": "Welcome {user} to {server}!",
+        "embed": {
+            "enabled": true,
+            "title": "Welcome to {server}",
+            "description": "Glad to have you here, {user}!",
+            "color": "#3498db",
+            "thumbnail": true,
+            "image": "",
+            "footer": "Welcome!",
+            "footerIcon": "",
+            "timestamp": true
+        },
+        "dm": {
+            "enabled": false,
+            "message": "Welcome to {server}!"
+        }
+    },
+    "selectRoles": {
+        "enabled": false,
+        "message": "Select your roles below:",
+        "embed": {
+            "title": "Role Selection",
+            "description": "Click the buttons below to get your roles",
+            "color": "#3498db"
+        },
+        "groups": []
+    },
+    "games": {
+        "enabled": false,
+        "leaderboard": {
+            "enabled": true,
+            "type": "global"
+        },
+        "categories": {
+            "trivia": { "enabled": true },
+            "counting": { "enabled": true, "channelId": "" }
+        }
+    },
+    "automod": {
+        "enabled": false,
+        "rules": {
+            "links": { "enabled": false, "action": "delete" },
+            "invites": { "enabled": false, "action": "delete" },
+            "mentions": { "enabled": false, "limit": 5, "action": "delete" },
+            "badWords": { "enabled": false, "words": [], "action": "delete" },
+            "caps": { "enabled": false, "limit": 70, "action": "delete" }
+        }
+    },
+    "autoLines": {
+        "enabled": false,
+        "channels": []
+    },
+    "leveling": {
+        "enabled": false,
+        "xpPerMessage": { "min": 15, "max": 25 },
+        "cooldown": 60000,
+        "rewards": [],
+        "ignoredChannels": [],
+        "ignoredRoles": [],
+        "announcement": {
+            "enabled": true,
+            "channel": "current",
+            "message": "Congratulations {user}! You've reached level {level}!"
+        }
+    },
+    "economy": {
+        "enabled": true,
+        "currency": "💰",
+        "dailyAmount": 100,
+        "weeklyAmount": 500,
+        "monthlyAmount": 2000,
+        "workMin": 50,
+        "workMax": 150,
+        "crimeMin": 100,
+        "crimeMax": 500,
+        "crimeSuccessRate": 45,
+        "robMin": 50,
+        "robMax": 300,
+        "robSuccessRate": 35
+    },
+    "verification": {
+        "enabled": false,
+        "type": "button", // button or captcha
+        "roleId": "",
+        "channelId": "",
+        "message": "Click the button below to verify!",
+        "buttonLabel": "Verify Me"
+    },
+    "serverLock": {
+        "locked": false,
+        "maintenance": false,
+        "lockedRoles": [],
+        "exemptRoles": []
+    },
+    "social": {
+        "enabled": true
+    },
+    "fun": {
+        "enabled": true
+    },
+    "utility": {
+        "enabled": true,
+        "snipeEnabled": true,
+        "afkEnabled": true
+    },
+    "roleManagement": {
+        "autoRoles": [],
+        "reactionRoles": [],
+        "hierarchyEnforcement": true
+    },
+    "aiModeration": {
+        "enabled": false,
+        "toxicityThreshold": 0.7,
+        "sentimentThreshold": -0.5,
+        "actions": {
+            "toxic": "warn",
+            "negative": "none"
+        }
+    },
+    "socialIntegration": {
+        "twitch": {
+            "enabled": false,
+            "channels": []
+        },
+        "youtube": {
+            "enabled": false,
+            "channels": []
+        }
+    },
+    "webhooks": {
+        "enabled": true,
+        "endpoints": []
+    },
+    "branding": {
+        "prefix": "!",
+        "displayName": "LR7 Bot"
     }
 }

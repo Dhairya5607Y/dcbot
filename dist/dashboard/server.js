@@ -348,8 +348,8 @@ class Dashboard {
                 });
             }
         });
-        this.app.get('/settings', async (_req, res) => {
-            const currentLang = _req.cookies?.preferredLanguage || 'en';
+        this.app.get('/settings', this.requireAdmin.bind(this), async (req, res) => {
+            const currentLang = req.cookies?.preferredLanguage || 'en';
             const locale = this.getLocale(currentLang);
             try {
                 return res.render('settings', {
@@ -360,6 +360,8 @@ class Dashboard {
                     path: '/settings',
                     currentLang,
                     locale,
+                    user: req.session.user,
+                    guild: res.locals.guild,
                     breadcrumbs: this.getBreadcrumbs('/settings')
                 });
             }
@@ -373,8 +375,8 @@ class Dashboard {
                 });
             }
         });
-        this.app.get('/commands', (_req, res) => {
-            const currentLang = _req.cookies?.preferredLanguage || 'en';
+        this.app.get('/commands', this.requireAdmin.bind(this), (req, res) => {
+            const currentLang = req.cookies?.preferredLanguage || 'en';
             const locale = this.getLocale(currentLang);
             const categories = [
                 {
@@ -402,10 +404,12 @@ class Dashboard {
                 path: '/commands',
                 currentLang,
                 locale,
+                user: req.session.user,
+                guild: res.locals.guild,
                 breadcrumbs: this.getBreadcrumbs('/commands')
             });
         });
-        this.app.get('/commands/general', (_req, res) => {
+        this.app.get('/commands/general', this.requireAdmin.bind(this), (req, res) => {
             const generalCommands = ['avatar', 'banner', 'ping', 'roles', 'server', 'user'].map(cmd => ({
                 name: cmd,
                 description: res.locals.locale.dashboard.commandDescriptions[cmd] || `${cmd} command`,
@@ -417,13 +421,15 @@ class Dashboard {
                 title: res.locals.locale.dashboard.commands.general,
                 page: 'general',
                 commands: generalCommands,
+                user: req.session.user,
+                guild: res.locals.guild,
                 roles: this.client.guilds.cache.first()?.roles.cache.map(role => ({
                     id: role.id,
                     name: role.name
                 })) ?? []
             });
         });
-        this.app.get('/commands/moderation', (_req, res) => {
+        this.app.get('/commands/moderation', this.requireAdmin.bind(this), (req, res) => {
             const modCommands = ['ban', 'kick', 'mute', 'unmute', 'warn', 'unwarn', 'clear', 'lock', 'unlock', 'hide', 'unhide', 'move', 'timeout', 'rtimeout'].map(cmd => ({
                 name: cmd,
                 description: res.locals.locale.dashboard.commandDescriptions[cmd] || `${cmd} command`,
@@ -435,13 +441,15 @@ class Dashboard {
                 title: res.locals.locale.dashboard.commands.moderation,
                 page: 'moderation',
                 commands: modCommands,
+                user: req.session.user,
+                guild: res.locals.guild,
                 roles: this.client.guilds.cache.first()?.roles.cache.map(role => ({
                     id: role.id,
                     name: role.name
                 })) ?? []
             });
         });
-        this.app.get('/commands/utility', (_req, res) => {
+        this.app.get('/commands/utility', this.requireAdmin.bind(this), (req, res) => {
             const utilityCommands = ['setnick', 'role', 'rrole', 'warns', 'apply', 'ticket', 'unban'].map(cmd => ({
                 name: cmd,
                 description: res.locals.locale.dashboard.commandDescriptions[cmd] || `${cmd} command`,
@@ -453,13 +461,15 @@ class Dashboard {
                 title: res.locals.locale.dashboard.commands.utility || 'Utility Commands',
                 page: 'utility',
                 commands: utilityCommands,
+                user: req.session.user,
+                guild: res.locals.guild,
                 roles: this.client.guilds.cache.first()?.roles.cache.map(role => ({
                     id: role.id,
                     name: role.name
                 })) ?? []
             });
         });
-        this.app.post('/api/commands/toggle', async (req, res) => {
+        this.app.post('/api/commands/toggle', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const { command, enabled } = req.body;
                 console.log('Toggling command:', command, enabled);
@@ -503,7 +513,7 @@ class Dashboard {
                 return res.status(500).json({ error: 'Failed to toggle command' });
             }
         });
-        this.app.get('/api/commands/:command/permissions', (req, res) => {
+        this.app.get('/api/commands/:command/permissions', this.requireAdmin.bind(this), (req, res) => {
             try {
                 const command = req.params.command;
                 if (!this.client.settings.commands[command]) {
@@ -520,7 +530,7 @@ class Dashboard {
                 return res.status(500).json({ error: 'Failed to get permissions' });
             }
         });
-        this.app.post('/api/commands/:command/permissions', async (req, res) => {
+        this.app.post('/api/commands/:command/permissions', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const { command } = req.params;
                 const { enabledRoleIds, disabledRoleIds } = req.body;
@@ -539,7 +549,7 @@ class Dashboard {
                 return res.status(500).json({ error: 'Failed to update permissions' });
             }
         });
-        this.app.post('/api/commands/:command/update', async (req, res) => {
+        this.app.post('/api/commands/:command/update', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const { command } = req.params;
                 const settings = req.body;
@@ -558,9 +568,9 @@ class Dashboard {
                 return res.status(500).json({ error: 'Failed to update command settings' });
             }
         });
-        this.app.get('/api/roles', async (_req, res) => {
+        this.app.get('/api/roles', this.requireAdmin.bind(this), async (req, res) => {
             try {
-                const guild = this.client.guilds.cache.get(config_1.default.mainGuildId);
+                const guild = res.locals.guild;
                 if (!guild) {
                     return res.status(404).json({ error: 'Guild not found' });
                 }
@@ -580,7 +590,7 @@ class Dashboard {
                 return res.status(500).json({ error: 'Failed to fetch roles' });
             }
         });
-        this.app.get('/api/commands/:command/settings', async (req, res) => {
+        this.app.get('/api/commands/:command/settings', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const { command } = req.params;
                 const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
@@ -595,7 +605,7 @@ class Dashboard {
                 return res.status(500).json({ error: 'Failed to fetch command settings' });
             }
         });
-        this.app.post('/api/commands/:command/settings', async (req, res) => {
+        this.app.post('/api/commands/:command/settings', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const { command } = req.params;
                 const { aliases, permissions } = req.body;
@@ -625,9 +635,9 @@ class Dashboard {
                 return res.status(500).json({ error: 'Failed to save command settings' });
             }
         });
-        this.app.get('/api/channels', async (_req, res) => {
+        this.app.get('/api/channels', this.requireAdmin.bind(this), async (req, res) => {
             try {
-                const guild = this.client.guilds.cache.get(config_1.default.mainGuildId);
+                const guild = res.locals.guild;
                 if (!guild) {
                     return res.status(404).json({ error: 'Guild not found' });
                 }
@@ -645,20 +655,11 @@ class Dashboard {
                 return res.status(500).json({ error: 'Failed to fetch channels' });
             }
         });
-        this.app.get('/logs', (_req, res) => {
-            const currentLang = _req.cookies?.preferredLanguage || 'en';
+        this.app.get('/logs', this.requireAdmin.bind(this), (req, res) => {
+            const currentLang = req.cookies?.preferredLanguage || 'en';
             const locale = this.getLocale(currentLang);
             try {
-                const guild = this.client.guilds.cache.get(config_1.default.mainGuildId);
-                if (!guild) {
-                    return res.status(404).render('error', {
-                        title: '404 - Not Found',
-                        error: { code: 404, message: 'Guild not found' },
-                        currentLang,
-                        locale,
-                        path: '/logs'
-                    });
-                }
+                const guild = res.locals.guild;
                 const channels = guild.channels.cache
                     .filter(channel => channel.type === 0)
                     .map(channel => ({
@@ -672,6 +673,8 @@ class Dashboard {
                     path: '/logs',
                     currentLang,
                     locale,
+                    user: req.session.user,
+                    guild: res.locals.guild,
                     breadcrumbs: this.getBreadcrumbs('/logs')
                 });
             }
@@ -686,7 +689,7 @@ class Dashboard {
                 });
             }
         });
-        this.app.post('/api/logs/update', async (req, res) => {
+        this.app.post('/api/logs/update', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const { logType, settings } = req.body;
                 if (!logType || !settings) {
@@ -713,15 +716,9 @@ class Dashboard {
                 return res.status(500).json({ error: 'Failed to update log settings' });
             }
         });
-        this.app.get('/protection', async (_req, res) => {
+        this.app.get('/protection', this.requireAdmin.bind(this), async (req, res) => {
             try {
-                const guild = this.client.guilds.cache.get(config_1.default.mainGuildId);
-                if (!guild) {
-                    return res.status(404).render('error', {
-                        title: '404 - Not Found',
-                        error: { code: 404, message: 'Guild not found' }
-                    });
-                }
+                const guild = res.locals.guild;
                 const channels = guild.channels.cache
                     .filter(channel => channel.type === 0)
                     .map(channel => ({
@@ -741,6 +738,8 @@ class Dashboard {
                     settings: this.client.settings,
                     channels: channels,
                     roles: roles,
+                    user: req.session.user,
+                    guild: res.locals.guild,
                     path: '/protection'
                 });
             }
@@ -752,7 +751,7 @@ class Dashboard {
                 });
             }
         });
-        this.app.post('/api/protection/settings', async (req, res) => {
+        this.app.post('/api/protection/settings', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const settings = req.body;
                 const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
@@ -773,7 +772,7 @@ class Dashboard {
                 });
             }
         });
-        this.app.post('/api/protection/update', async (req, res) => {
+        this.app.post('/api/protection/update', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const { section, settings } = req.body;
                 if (!section || !settings) {
@@ -803,20 +802,11 @@ class Dashboard {
                 return res.status(500).json({ error: 'Failed to update protection settings' });
             }
         });
-        this.app.get('/tickets', async (_req, res) => {
-            const currentLang = _req.cookies?.preferredLanguage || 'en';
+        this.app.get('/tickets', this.requireAdmin.bind(this), async (req, res) => {
+            const currentLang = req.cookies?.preferredLanguage || 'en';
             const locale = this.getLocale(currentLang);
             try {
-                const guild = this.client.guilds.cache.get(config_1.default.mainGuildId);
-                if (!guild) {
-                    return res.status(404).render('error', {
-                        title: '404 - Not Found',
-                        error: { code: 404, message: 'Guild not found' },
-                        currentLang,
-                        locale,
-                        path: '/tickets'
-                    });
-                }
+                const guild = res.locals.guild;
                 const channels = guild.channels.cache
                     .filter(channel => channel.type === discord_js_1.ChannelType.GuildText)
                     .map(channel => ({
@@ -845,6 +835,8 @@ class Dashboard {
                     roles,
                     path: '/tickets',
                     currentLang,
+                    user: req.session.user,
+                    guild: res.locals.guild,
                     locale,
                     breadcrumbs: this.getBreadcrumbs('/tickets')
                 });
@@ -860,7 +852,7 @@ class Dashboard {
                 });
             }
         });
-        this.app.post('/api/tickets/settings', async (req, res) => {
+        this.app.post('/api/tickets/settings', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const settings = req.body;
                 if (settings.embed) {
@@ -893,7 +885,7 @@ class Dashboard {
                 return res.status(500).json({ error: 'Failed to save ticket settings' });
             }
         });
-        this.app.get('/api/tickets/:section/settings', async (req, res) => {
+        this.app.get('/api/tickets/:section/settings', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const { section } = req.params;
                 const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
@@ -908,7 +900,7 @@ class Dashboard {
                 return res.status(500).json({ error: 'Failed to fetch section settings' });
             }
         });
-        this.app.post('/api/tickets/:section/settings', async (req, res) => {
+        this.app.post('/api/tickets/:section/settings', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const { section } = req.params;
                 const settings = req.body;
@@ -933,7 +925,7 @@ class Dashboard {
                 return res.status(500).json({ error: 'Failed to update section settings' });
             }
         });
-        this.app.post('/api/tickets/sections/add', async (req, res) => {
+        this.app.post('/api/tickets/sections/add', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const newSection = req.body;
                 if (newSection.imageUrl === '') {
@@ -972,9 +964,9 @@ class Dashboard {
                 return res.status(500).json({ error: 'Failed to delete ticket section' });
             }
         });
-        this.app.get('/apply', async (_req, res) => {
+        this.app.get('/apply', this.requireAdmin.bind(this), async (req, res) => {
             try {
-                const guild = this.client.guilds.cache.get(config_1.default.mainGuildId);
+                const guild = res.locals.guild;
                 if (!guild) {
                     return res.status(404).render('error', {
                         title: '404 - Not Found',
@@ -1012,7 +1004,7 @@ class Dashboard {
                 });
             }
         });
-        this.app.get('/api/apply/settings', async (_req, res) => {
+        this.app.get('/api/apply/settings', this.requireAdmin.bind(this), async (_req, res) => {
             try {
                 const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
                 const currentSettings = JSON.parse((0, fs_1.readFileSync)(settingsPath, 'utf8'));
@@ -1033,7 +1025,7 @@ class Dashboard {
                 return res.status(500).json({ error: 'Failed to fetch apply settings' });
             }
         });
-        this.app.post('/api/apply/settings', async (req, res) => {
+        this.app.post('/api/apply/settings', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const settings = req.body;
                 const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
@@ -1072,7 +1064,7 @@ class Dashboard {
                 return res.status(500).json({ error: 'Failed to delete position' });
             }
         });
-        this.app.post('/api/apply/positions/add', async (req, res) => {
+        this.app.post('/api/apply/positions/add', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const newPosition = req.body;
                 const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
@@ -1103,7 +1095,7 @@ class Dashboard {
                 return res.status(500).json({ error: 'Failed to add position' });
             }
         });
-        this.app.get('/rules', async (_req, res) => {
+        this.app.get('/rules', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 res.render('rules', {
                     title: res.locals.locale.dashboard.rules.title,
@@ -1123,7 +1115,7 @@ class Dashboard {
                 });
             }
         });
-        this.app.post('/api/rules/settings', async (req, res) => {
+        this.app.post('/api/rules/settings', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const settings = req.body;
                 const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
@@ -1144,9 +1136,9 @@ class Dashboard {
                 return res.status(500).json({ error: 'Failed to save rules settings' });
             }
         });
-        this.app.get('/giveaway', async (_req, res) => {
+        this.app.get('/giveaway', this.requireAdmin.bind(this), async (req, res) => {
             try {
-                const guild = this.client.guilds.cache.get(config_1.default.mainGuildId);
+                const guild = res.locals.guild;
                 if (!guild) {
                     return res.status(404).render('error', {
                         title: '404 - Not Found',
@@ -1183,7 +1175,7 @@ class Dashboard {
                 });
             }
         });
-        this.app.post('/api/giveaway/settings', async (req, res) => {
+        this.app.post('/api/giveaway/settings', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const settings = req.body;
                 const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
@@ -1204,7 +1196,7 @@ class Dashboard {
                 return res.status(500).json({ error: 'Failed to save giveaway settings' });
             }
         });
-        this.app.get('/tempchannels', async (_req, res) => {
+        this.app.get('/tempchannels', this.requireAdmin.bind(this), async (req, res) => {
             const currentLang = _req.cookies?.preferredLanguage || 'en';
             const locale = this.getLocale(currentLang);
             try {
@@ -1261,7 +1253,7 @@ class Dashboard {
                 });
             }
         });
-        this.app.post('/api/tempchannels/settings', async (req, res) => {
+        this.app.post('/api/tempchannels/settings', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const settings = req.body;
                 const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
@@ -1282,7 +1274,7 @@ class Dashboard {
                 return res.status(500).json({ error: 'Failed to save temp channels settings' });
             }
         });
-        this.app.get('/autoreply', async (_req, res) => {
+        this.app.get('/autoreply', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const settings = JSON.parse((0, fs_1.readFileSync)((0, path_2.join)(process.cwd(), 'settings.json'), 'utf8'));
                 res.render('autoReply', {
@@ -1302,7 +1294,7 @@ class Dashboard {
                 });
             }
         });
-        this.app.post('/api/autoreply/settings', async (req, res) => {
+        this.app.post('/api/autoreply/settings', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const settings = req.body;
                 const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
@@ -1323,7 +1315,7 @@ class Dashboard {
                 return res.status(500).json({ error: 'Failed to save settings' });
             }
         });
-        this.app.get('/suggestions', async (_req, res) => {
+        this.app.get('/suggestions', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const settings = JSON.parse((0, fs_1.readFileSync)((0, path_2.join)(process.cwd(), 'settings.json'), 'utf-8'));
                 res.render('suggestions', {
@@ -1339,7 +1331,7 @@ class Dashboard {
                 res.status(500).send('Error loading page');
             }
         });
-        this.app.post('/api/settings/suggestions', async (req, res) => {
+        this.app.post('/api/settings/suggestions', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const settings = req.body;
                 const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
@@ -1377,7 +1369,7 @@ class Dashboard {
                 });
             }
         });
-        this.app.post('/api/settings/language', async (req, res) => {
+        this.app.post('/api/settings/language', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const { defaultLanguage, supportedLanguages } = req.body;
                 if (!defaultLanguage || !supportedLanguages || !Array.isArray(supportedLanguages)) {
@@ -1420,7 +1412,7 @@ class Dashboard {
                 });
             }
         });
-        this.app.post('/api/settings/autoRoles', async (req, res) => {
+        this.app.post('/api/settings/autoRoles', this.requireAdmin.bind(this), async (req, res) => {
             try {
                 const settings = req.body;
                 if (!settings || typeof settings.enabled !== 'boolean' ||
@@ -1531,20 +1523,24 @@ class Dashboard {
                 });
             }
         });
-        this.app.get('/welcome', (_req, res) => {
+        this.app.get('/welcome', this.requireAdmin.bind(this), (req, res) => {
             try {
-                const currentLang = _req.cookies?.preferredLanguage || 'en';
+                const currentLang = req.cookies?.preferredLanguage || 'en';
                 const locale = this.getLocale(currentLang);
-                return res.render('coming-soon', {
-                    title: locale.comingSoon.features.welcomeSystem.title,
-                    feature: 'welcomeSystem',
-                    featureIcon: 'fas fa-hand-paper',
+                const guild = res.locals.guild;
+                const channels = guild.channels.cache
+                    .filter(channel => channel.type === discord_js_1.ChannelType.GuildText)
+                    .map(channel => ({ id: channel.id, name: channel.name }));
+
+                return res.render('welcome', {
+                    title: locale.dashboard.navigation.welcome,
                     settings: this.client.settings,
-                    client: this.client,
-                    config: config_1.default,
+                    channels,
                     path: '/welcome',
                     currentLang,
                     locale,
+                    user: req.session.user,
+                    guild: res.locals.guild,
                     breadcrumbs: this.getBreadcrumbs('/welcome')
                 });
             }
@@ -1558,20 +1554,41 @@ class Dashboard {
                 });
             }
         });
-        this.app.get('/selectroles', (_req, res) => {
+
+        this.app.post('/api/welcome/settings', this.requireAdmin.bind(this), async (req, res) => {
             try {
-                const currentLang = _req.cookies?.preferredLanguage || 'en';
+                const settings = req.body;
+                const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
+                let currentSettings = JSON.parse((0, fs_1.readFileSync)(settingsPath, 'utf8'));
+                currentSettings.welcome = { ...currentSettings.welcome, ...settings };
+                (0, fs_1.writeFileSync)(settingsPath, JSON.stringify(currentSettings, null, 4), 'utf8');
+                this.client.settings = currentSettings;
+                return res.json({ success: true, settings: currentSettings.welcome });
+            } catch (error) {
+                console.error('Error saving welcome settings:', error);
+                return res.status(500).json({ error: 'Failed to save settings' });
+            }
+        });
+
+        this.app.get('/selectroles', this.requireAdmin.bind(this), (req, res) => {
+            try {
+                const currentLang = req.cookies?.preferredLanguage || 'en';
                 const locale = this.getLocale(currentLang);
-                return res.render('coming-soon', {
-                    title: locale.comingSoon.features.selectRoles.title,
-                    feature: 'selectRoles',
-                    featureIcon: 'fas fa-id-badge',
+                const guild = res.locals.guild;
+                const roles = guild.roles.cache
+                    .filter(role => role.id !== guild.id)
+                    .sort((a, b) => b.position - a.position)
+                    .map(role => ({ id: role.id, name: role.name, color: role.hexColor }));
+
+                return res.render('selectRoles', {
+                    title: locale.dashboard.navigation.selectRoles,
                     settings: this.client.settings,
-                    client: this.client,
-                    config: config_1.default,
+                    roles,
                     path: '/selectroles',
                     currentLang,
                     locale,
+                    user: req.session.user,
+                    guild: res.locals.guild,
                     breadcrumbs: this.getBreadcrumbs('/selectroles')
                 });
             }
@@ -1585,20 +1602,56 @@ class Dashboard {
                 });
             }
         });
-        this.app.get('/games', (_req, res) => {
+
+        this.app.post('/api/selectroles/settings', this.requireAdmin.bind(this), async (req, res) => {
             try {
-                const currentLang = _req.cookies?.preferredLanguage || 'en';
+                const settings = req.body;
+                const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
+                let currentSettings = JSON.parse((0, fs_1.readFileSync)(settingsPath, 'utf8'));
+                currentSettings.selectRoles = { ...currentSettings.selectRoles, ...settings };
+                (0, fs_1.writeFileSync)(settingsPath, JSON.stringify(currentSettings, null, 4), 'utf8');
+                this.client.settings = currentSettings;
+                return res.json({ success: true, settings: currentSettings.selectRoles });
+            } catch (error) {
+                console.error('Error saving select roles settings:', error);
+                return res.status(500).json({ error: 'Failed to save settings' });
+            }
+        });
+
+        this.app.post('/api/selectroles/send', this.requireAdmin.bind(this), async (req, res) => {
+            try {
+                const { channelId } = req.body;
+                const guild = res.locals.guild;
+                const channel = guild.channels.cache.get(channelId);
+                if (!channel) return res.status(404).json({ error: 'Channel not found' });
+
+                const { sendSelectRolesMessage } = require('../src/selectRoles/selectRolesHandler');
+                await sendSelectRolesMessage(channel, this.client);
+                return res.json({ success: true });
+            } catch (error) {
+                console.error('Error sending select roles message:', error);
+                return res.status(500).json({ error: 'Failed to send message' });
+            }
+        });
+
+        this.app.get('/games', this.requireAdmin.bind(this), (req, res) => {
+            try {
+                const currentLang = req.cookies?.preferredLanguage || 'en';
                 const locale = this.getLocale(currentLang);
-                return res.render('coming-soon', {
-                    title: locale.comingSoon.features.games.title,
-                    feature: 'games',
-                    featureIcon: 'fas fa-gamepad',
+                const guild = res.locals.guild;
+                const channels = guild.channels.cache
+                    .filter(channel => channel.type === discord_js_1.ChannelType.GuildText)
+                    .map(channel => ({ id: channel.id, name: channel.name }));
+
+                return res.render('games', {
+                    title: locale.dashboard.navigation.games,
                     settings: this.client.settings,
-                    client: this.client,
-                    config: config_1.default,
+                    channels,
                     path: '/games',
                     currentLang,
                     locale,
+                    user: req.session.user,
+                    guild: res.locals.guild,
                     breadcrumbs: this.getBreadcrumbs('/games')
                 });
             }
@@ -1612,20 +1665,34 @@ class Dashboard {
                 });
             }
         });
-        this.app.get('/automod', (_req, res) => {
+
+        this.app.post('/api/games/settings', this.requireAdmin.bind(this), async (req, res) => {
             try {
-                const currentLang = _req.cookies?.preferredLanguage || 'en';
+                const settings = req.body;
+                const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
+                let currentSettings = JSON.parse((0, fs_1.readFileSync)(settingsPath, 'utf8'));
+                currentSettings.games = { ...currentSettings.games, ...settings };
+                (0, fs_1.writeFileSync)(settingsPath, JSON.stringify(currentSettings, null, 4), 'utf8');
+                this.client.settings = currentSettings;
+                return res.json({ success: true, settings: currentSettings.games });
+            } catch (error) {
+                console.error('Error saving games settings:', error);
+                return res.status(500).json({ error: 'Failed to save settings' });
+            }
+        });
+
+        this.app.get('/automod', this.requireAdmin.bind(this), (req, res) => {
+            try {
+                const currentLang = req.cookies?.preferredLanguage || 'en';
                 const locale = this.getLocale(currentLang);
-                return res.render('coming-soon', {
-                    title: locale.comingSoon.features.autoMod.title,
-                    feature: 'autoMod',
-                    featureIcon: 'fas fa-robot',
+                return res.render('automod', {
+                    title: locale.dashboard.navigation.automod,
                     settings: this.client.settings,
-                    client: this.client,
-                    config: config_1.default,
                     path: '/automod',
                     currentLang,
                     locale,
+                    user: req.session.user,
+                    guild: res.locals.guild,
                     breadcrumbs: this.getBreadcrumbs('/automod')
                 });
             }
@@ -1639,20 +1706,40 @@ class Dashboard {
                 });
             }
         });
-        this.app.get('/autolines', (_req, res) => {
+
+        this.app.post('/api/automod/settings', this.requireAdmin.bind(this), async (req, res) => {
             try {
-                const currentLang = _req.cookies?.preferredLanguage || 'en';
+                const settings = req.body;
+                const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
+                let currentSettings = JSON.parse((0, fs_1.readFileSync)(settingsPath, 'utf8'));
+                currentSettings.automod = { ...currentSettings.automod, ...settings };
+                (0, fs_1.writeFileSync)(settingsPath, JSON.stringify(currentSettings, null, 4), 'utf8');
+                this.client.settings = currentSettings;
+                return res.json({ success: true, settings: currentSettings.automod });
+            } catch (error) {
+                console.error('Error saving automod settings:', error);
+                return res.status(500).json({ error: 'Failed to save settings' });
+            }
+        });
+
+        this.app.get('/autolines', this.requireAdmin.bind(this), (req, res) => {
+            try {
+                const currentLang = req.cookies?.preferredLanguage || 'en';
                 const locale = this.getLocale(currentLang);
-                return res.render('coming-soon', {
-                    title: locale.comingSoon.features.autoLines.title,
-                    feature: 'autoLines',
-                    featureIcon: 'fas fa-align-left',
+                const guild = res.locals.guild;
+                const channels = guild.channels.cache
+                    .filter(channel => channel.type === discord_js_1.ChannelType.GuildText)
+                    .map(channel => ({ id: channel.id, name: channel.name }));
+
+                return res.render('autoLines', {
+                    title: locale.dashboard.navigation.autoLines,
                     settings: this.client.settings,
-                    client: this.client,
-                    config: config_1.default,
+                    channels,
                     path: '/autolines',
                     currentLang,
                     locale,
+                    user: req.session.user,
+                    guild: res.locals.guild,
                     breadcrumbs: this.getBreadcrumbs('/autolines')
                 });
             }
@@ -1666,20 +1753,45 @@ class Dashboard {
                 });
             }
         });
-        this.app.get('/leveling', (_req, res) => {
+
+        this.app.post('/api/autolines/settings', this.requireAdmin.bind(this), async (req, res) => {
             try {
-                const currentLang = _req.cookies?.preferredLanguage || 'en';
+                const settings = req.body;
+                const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
+                let currentSettings = JSON.parse((0, fs_1.readFileSync)(settingsPath, 'utf8'));
+                currentSettings.autoLines = { ...currentSettings.autoLines, ...settings };
+                (0, fs_1.writeFileSync)(settingsPath, JSON.stringify(currentSettings, null, 4), 'utf8');
+                this.client.settings = currentSettings;
+                return res.json({ success: true, settings: currentSettings.autoLines });
+            } catch (error) {
+                console.error('Error saving auto lines settings:', error);
+                return res.status(500).json({ error: 'Failed to save settings' });
+            }
+        });
+
+        this.app.get('/leveling', this.requireAdmin.bind(this), (req, res) => {
+            try {
+                const currentLang = req.cookies?.preferredLanguage || 'en';
                 const locale = this.getLocale(currentLang);
-                return res.render('coming-soon', {
-                    title: locale.comingSoon.features.leveling.title,
-                    feature: 'leveling',
-                    featureIcon: 'fas fa-chart-line',
+                const guild = res.locals.guild;
+                const channels = guild.channels.cache
+                    .filter(channel => channel.type === discord_js_1.ChannelType.GuildText)
+                    .map(channel => ({ id: channel.id, name: channel.name }));
+                const roles = guild.roles.cache
+                    .filter(role => role.id !== guild.id)
+                    .sort((a, b) => b.position - a.position)
+                    .map(role => ({ id: role.id, name: role.name, color: role.hexColor }));
+
+                return res.render('leveling', {
+                    title: locale.dashboard.navigation.leveling,
                     settings: this.client.settings,
-                    client: this.client,
-                    config: config_1.default,
+                    channels,
+                    roles,
                     path: '/leveling',
                     currentLang,
                     locale,
+                    user: req.session.user,
+                    guild: res.locals.guild,
                     breadcrumbs: this.getBreadcrumbs('/leveling')
                 });
             }
@@ -1693,7 +1805,141 @@ class Dashboard {
                 });
             }
         });
-        this.app.get('/api/commands/list', async (_req, res) => {
+
+        this.app.post('/api/leveling/settings', this.requireAdmin.bind(this), async (req, res) => {
+            try {
+                const settings = req.body;
+                const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
+                let currentSettings = JSON.parse((0, fs_1.readFileSync)(settingsPath, 'utf8'));
+                currentSettings.leveling = { ...currentSettings.leveling, ...settings };
+                (0, fs_1.writeFileSync)(settingsPath, JSON.stringify(currentSettings, null, 4), 'utf8');
+                this.client.settings = currentSettings;
+                return res.json({ success: true, settings: currentSettings.leveling });
+            } catch (error) {
+                console.error('Error saving leveling settings:', error);
+                return res.status(500).json({ error: 'Failed to save settings' });
+            }
+        });
+
+        // Economy Routes
+        this.app.get('/economy', this.requireAdmin.bind(this), (req, res) => {
+            try {
+                const currentLang = req.cookies?.preferredLanguage || 'en';
+                const locale = this.getLocale(currentLang);
+                return res.render('economy', {
+                    title: 'Economy Settings',
+                    settings: this.client.settings,
+                    path: '/economy',
+                    currentLang,
+                    locale,
+                    user: req.session.user,
+                    guild: res.locals.guild,
+                    breadcrumbs: this.getBreadcrumbs('/economy')
+                });
+            } catch (error) {
+                console.error('Error rendering economy page:', error);
+                res.status(500).send('Internal Server Error');
+            }
+        });
+
+        this.app.post('/api/economy/settings', this.requireAdmin.bind(this), async (req, res) => {
+            try {
+                const settings = req.body;
+                const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
+                let currentSettings = JSON.parse((0, fs_1.readFileSync)(settingsPath, 'utf8'));
+                currentSettings.economy = { ...currentSettings.economy, ...settings };
+                (0, fs_1.writeFileSync)(settingsPath, JSON.stringify(currentSettings, null, 4), 'utf8');
+                this.client.settings = currentSettings;
+                return res.json({ success: true, settings: currentSettings.economy });
+            } catch (error) {
+                console.error('Error saving economy settings:', error);
+                return res.status(500).json({ error: 'Failed to save settings' });
+            }
+        });
+
+        // Verification Routes
+        this.app.get('/verification', this.requireAdmin.bind(this), (req, res) => {
+            try {
+                const currentLang = req.cookies?.preferredLanguage || 'en';
+                const locale = this.getLocale(currentLang);
+                const guild = res.locals.guild;
+                const roles = guild.roles.cache
+                    .filter(role => role.id !== guild.id)
+                    .sort((a, b) => b.position - a.position)
+                    .map(role => ({ id: role.id, name: role.name, color: role.hexColor }));
+                const channels = guild.channels.cache
+                    .filter(channel => channel.type === discord_js_1.ChannelType.GuildText)
+                    .map(channel => ({ id: channel.id, name: channel.name }));
+
+                return res.render('verification', {
+                    title: 'Verification Settings',
+                    settings: this.client.settings,
+                    roles,
+                    channels,
+                    path: '/verification',
+                    currentLang,
+                    locale,
+                    user: req.session.user,
+                    guild: res.locals.guild,
+                    breadcrumbs: this.getBreadcrumbs('/verification')
+                });
+            } catch (error) {
+                console.error('Error rendering verification page:', error);
+                res.status(500).send('Internal Server Error');
+            }
+        });
+
+        this.app.post('/api/verification/settings', this.requireAdmin.bind(this), async (req, res) => {
+            try {
+                const settings = req.body;
+                const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
+                let currentSettings = JSON.parse((0, fs_1.readFileSync)(settingsPath, 'utf8'));
+                currentSettings.verification = { ...currentSettings.verification, ...settings };
+                (0, fs_1.writeFileSync)(settingsPath, JSON.stringify(currentSettings, null, 4), 'utf8');
+                this.client.settings = currentSettings;
+                return res.json({ success: true, settings: currentSettings.verification });
+            } catch (error) {
+                console.error('Error saving verification settings:', error);
+                return res.status(500).json({ error: 'Failed to save settings' });
+            }
+        });
+
+        // Server Lock Routes
+        this.app.get('/serverlock', this.requireAdmin.bind(this), (req, res) => {
+            try {
+                const currentLang = req.cookies?.preferredLanguage || 'en';
+                const locale = this.getLocale(currentLang);
+                return res.render('serverlock', {
+                    title: 'Server Lock Settings',
+                    settings: this.client.settings,
+                    path: '/serverlock',
+                    currentLang,
+                    locale,
+                    user: req.session.user,
+                    guild: res.locals.guild,
+                    breadcrumbs: this.getBreadcrumbs('/serverlock')
+                });
+            } catch (error) {
+                console.error('Error rendering serverlock page:', error);
+                res.status(500).send('Internal Server Error');
+            }
+        });
+
+        this.app.post('/api/serverlock/settings', this.requireAdmin.bind(this), async (req, res) => {
+            try {
+                const settings = req.body;
+                const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
+                let currentSettings = JSON.parse((0, fs_1.readFileSync)(settingsPath, 'utf8'));
+                currentSettings.serverLock = { ...currentSettings.serverLock, ...settings };
+                (0, fs_1.writeFileSync)(settingsPath, JSON.stringify(currentSettings, null, 4), 'utf8');
+                this.client.settings = currentSettings;
+                return res.json({ success: true, settings: currentSettings.serverLock });
+            } catch (error) {
+                console.error('Error saving serverlock settings:', error);
+                return res.status(500).json({ error: 'Failed to save settings' });
+            }
+        });
+        this.app.get('/api/commands/list', this.requireAdmin.bind(this), async (_req, res) => {
             try {
                 const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
                 const currentSettings = JSON.parse((0, fs_1.readFileSync)(settingsPath, 'utf8'));
@@ -1728,6 +1974,248 @@ class Dashboard {
                 });
             }
         });
+        this.app.get('/api/settings/export', this.requireAdmin.bind(this), (req, res) => {
+            try {
+                const settings = this.client.settings;
+                res.setHeader('Content-Type', 'application/json');
+                res.setHeader('Content-Disposition', 'attachment; filename=settings.json');
+                return res.send(JSON.stringify(settings, null, 4));
+            } catch (error) {
+                console.error('Error exporting settings:', error);
+                return res.status(500).json({ error: 'Failed to export settings' });
+            }
+        });
+
+        this.app.post('/api/settings/import', this.requireAdmin.bind(this), async (req, res) => {
+            try {
+                const settings = req.body;
+                const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
+                (0, fs_1.writeFileSync)(settingsPath, JSON.stringify(settings, null, 4), 'utf8');
+                this.client.settings = settings;
+                return res.json({ success: true });
+            } catch (error) {
+                console.error('Error importing settings:', error);
+                return res.status(500).json({ error: 'Failed to import settings' });
+            }
+        });
+
+        // AI Moderation Routes
+        this.app.get('/aimod', this.requireAdmin.bind(this), (req, res) => {
+            try {
+                const currentLang = req.cookies?.preferredLanguage || 'en';
+                const locale = this.getLocale(currentLang);
+                return res.render('aimod', {
+                    title: 'AI Moderation Settings',
+                    settings: this.client.settings,
+                    path: '/aimod',
+                    currentLang,
+                    locale,
+                    user: req.session.user,
+                    guild: res.locals.guild,
+                    breadcrumbs: this.getBreadcrumbs('/aimod')
+                });
+            } catch (error) {
+                console.error('Error rendering aimod page:', error);
+                res.status(500).send('Internal Server Error');
+            }
+        });
+
+        this.app.post('/api/aimod/settings', this.requireAdmin.bind(this), async (req, res) => {
+            try {
+                const settings = req.body;
+                const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
+                let currentSettings = JSON.parse((0, fs_1.readFileSync)(settingsPath, 'utf8'));
+                currentSettings.aiModeration = { ...currentSettings.aiModeration, ...settings };
+                (0, fs_1.writeFileSync)(settingsPath, JSON.stringify(currentSettings, null, 4), 'utf8');
+                this.client.settings = currentSettings;
+                return res.json({ success: true, settings: currentSettings.aiModeration });
+            } catch (error) {
+                console.error('Error saving aimod settings:', error);
+                return res.status(500).json({ error: 'Failed to save settings' });
+            }
+        });
+
+        // Social Integrations Routes
+        this.app.get('/integrations', this.requireAdmin.bind(this), (req, res) => {
+            try {
+                const currentLang = req.cookies?.preferredLanguage || 'en';
+                const locale = this.getLocale(currentLang);
+                const guild = res.locals.guild;
+                const channels = guild.channels.cache
+                    .filter(channel => channel.type === discord_js_1.ChannelType.GuildText)
+                    .map(channel => ({ id: channel.id, name: channel.name }));
+
+                return res.render('integrations', {
+                    title: 'Social Integrations',
+                    settings: this.client.settings,
+                    channels,
+                    path: '/integrations',
+                    currentLang,
+                    locale,
+                    user: req.session.user,
+                    guild: res.locals.guild,
+                    breadcrumbs: this.getBreadcrumbs('/integrations')
+                });
+            } catch (error) {
+                console.error('Error rendering integrations page:', error);
+                res.status(500).send('Internal Server Error');
+            }
+        });
+
+        this.app.post('/api/integrations/settings', this.requireAdmin.bind(this), async (req, res) => {
+            try {
+                const settings = req.body;
+                const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
+                let currentSettings = JSON.parse((0, fs_1.readFileSync)(settingsPath, 'utf8'));
+                currentSettings.socialIntegration = { ...currentSettings.socialIntegration, ...settings };
+                (0, fs_1.writeFileSync)(settingsPath, JSON.stringify(currentSettings, null, 4), 'utf8');
+                this.client.settings = currentSettings;
+                return res.json({ success: true, settings: currentSettings.socialIntegration });
+            } catch (error) {
+                console.error('Error saving integrations settings:', error);
+                return res.status(500).json({ error: 'Failed to save settings' });
+            }
+        });
+
+        // Custom Webhooks Routes
+        this.app.get('/webhooks', this.requireAdmin.bind(this), (req, res) => {
+            try {
+                const currentLang = req.cookies?.preferredLanguage || 'en';
+                const locale = this.getLocale(currentLang);
+                const guild = res.locals.guild;
+                const channels = guild.channels.cache
+                    .filter(channel => channel.type === discord_js_1.ChannelType.GuildText)
+                    .map(channel => ({ id: channel.id, name: channel.name }));
+
+                return res.render('webhooks', {
+                    title: 'Custom Webhooks',
+                    settings: this.client.settings,
+                    channels,
+                    path: '/webhooks',
+                    currentLang,
+                    locale,
+                    user: req.session.user,
+                    guild: res.locals.guild,
+                    breadcrumbs: this.getBreadcrumbs('/webhooks')
+                });
+            } catch (error) {
+                console.error('Error rendering webhooks page:', error);
+                res.status(500).send('Internal Server Error');
+            }
+        });
+
+        this.app.post('/api/webhooks/settings', this.requireAdmin.bind(this), async (req, res) => {
+            try {
+                const settings = req.body;
+                const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
+                let currentSettings = JSON.parse((0, fs_1.readFileSync)(settingsPath, 'utf8'));
+                currentSettings.webhooks = { ...currentSettings.webhooks, ...settings };
+                (0, fs_1.writeFileSync)(settingsPath, JSON.stringify(currentSettings, null, 4), 'utf8');
+                this.client.settings = currentSettings;
+                return res.json({ success: true, settings: currentSettings.webhooks });
+            } catch (error) {
+                console.error('Error saving webhooks settings:', error);
+                return res.status(500).json({ error: 'Failed to save settings' });
+            }
+        });
+
+        // Role Management Routes
+        this.app.get('/rolemanagement', this.requireAdmin.bind(this), (req, res) => {
+            try {
+                const currentLang = req.cookies?.preferredLanguage || 'en';
+                const locale = this.getLocale(currentLang);
+                const guild = res.locals.guild;
+                const roles = guild.roles.cache
+                    .filter(role => role.id !== guild.id)
+                    .sort((a, b) => b.position - a.position)
+                    .map(role => ({ id: role.id, name: role.name, color: role.hexColor }));
+
+                return res.render('rolemanagement', {
+                    title: 'Role Management',
+                    settings: this.client.settings,
+                    roles,
+                    path: '/rolemanagement',
+                    currentLang,
+                    locale,
+                    user: req.session.user,
+                    guild: res.locals.guild,
+                    breadcrumbs: this.getBreadcrumbs('/rolemanagement')
+                });
+            } catch (error) {
+                console.error('Error rendering rolemanagement page:', error);
+                res.status(500).send('Internal Server Error');
+            }
+        });
+
+        this.app.post('/api/rolemanagement/settings', this.requireAdmin.bind(this), async (req, res) => {
+            try {
+                const settings = req.body;
+                const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
+                let currentSettings = JSON.parse((0, fs_1.readFileSync)(settingsPath, 'utf8'));
+                currentSettings.roleManagement = { ...currentSettings.roleManagement, ...settings };
+                (0, fs_1.writeFileSync)(settingsPath, JSON.stringify(currentSettings, null, 4), 'utf8');
+                this.client.settings = currentSettings;
+                return res.json({ success: true, settings: currentSettings.roleManagement });
+            } catch (error) {
+                console.error('Error saving rolemanagement settings:', error);
+                return res.status(500).json({ error: 'Failed to save settings' });
+            }
+        });
+
+        // System Settings Routes
+        this.app.get('/system', this.requireAdmin.bind(this), (req, res) => {
+            try {
+                const currentLang = req.cookies?.preferredLanguage || 'en';
+                const locale = this.getLocale(currentLang);
+                return res.render('system', {
+                    title: 'System Settings',
+                    settings: this.client.settings,
+                    path: '/system',
+                    currentLang,
+                    locale,
+                    user: req.session.user,
+                    guild: res.locals.guild,
+                    breadcrumbs: this.getBreadcrumbs('/system')
+                });
+            } catch (error) {
+                console.error('Error rendering system page:', error);
+                res.status(500).send('Internal Server Error');
+            }
+        });
+
+        this.app.post('/api/settings/branding', this.requireAdmin.bind(this), async (req, res) => {
+            try {
+                const settings = req.body;
+                const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
+                let currentSettings = JSON.parse((0, fs_1.readFileSync)(settingsPath, 'utf8'));
+                currentSettings.branding = { ...currentSettings.branding, ...settings };
+                (0, fs_1.writeFileSync)(settingsPath, JSON.stringify(currentSettings, null, 4), 'utf8');
+                this.client.settings = currentSettings;
+                return res.json({ success: true, settings: currentSettings.branding });
+            } catch (error) {
+                console.error('Error saving branding settings:', error);
+                return res.status(500).json({ error: 'Failed to save settings' });
+            }
+        });
+
+        this.app.get('/api/webhooks/trigger/:id', async (req, res) => {
+            try {
+                const { id } = req.params;
+                const config = this.client.settings.webhooks.endpoints.find(e => e.id === id);
+                if (!config) return res.status(404).json({ error: 'Webhook not found' });
+                
+                const channel = this.client.channels.cache.get(config.channelId);
+                if (channel) {
+                    await channel.send(config.template || 'External data received!').catch(console.error);
+                }
+                
+                return res.json({ success: true });
+            } catch (error) {
+                console.error('Error triggering webhook:', error);
+                return res.status(500).json({ error: 'Failed to trigger webhook' });
+            }
+        });
+
         this.app.use((_req, res) => {
             res.status(404).render('error', {
                 title: '404 - ' + res.locals.locale.dashboard.error['404'].title,
@@ -1862,6 +2350,33 @@ class Dashboard {
             },
             suggestions: {
                 enabled: settings.suggestions?.enabled || false
+            },
+            welcome: {
+                enabled: settings.welcome?.enabled || false
+            },
+            selectRoles: {
+                enabled: settings.selectRoles?.enabled || false
+            },
+            games: {
+                enabled: settings.games?.enabled || false
+            },
+            automod: {
+                enabled: settings.automod?.enabled || false
+            },
+            autoLines: {
+                enabled: settings.autoLines?.enabled || false
+            },
+            leveling: {
+                enabled: settings.leveling?.enabled || false
+            },
+            economy: {
+                enabled: settings.economy?.enabled || false
+            },
+            verification: {
+                enabled: settings.verification?.enabled || false
+            },
+            serverLock: {
+                enabled: settings.serverLock?.locked || false
             }
         };
     }

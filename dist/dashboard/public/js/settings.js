@@ -7,11 +7,43 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeSettingsPage() {
     console.log('Initializing settings page...');
     
+    setupBrandingSettings();
     setupLanguageSettings();
-    
     setupAutoRolesSettings();
-    
     setupTabs();
+}
+
+function setupBrandingSettings() {
+    const saveButton = document.getElementById('saveBrandingSettings');
+    if (!saveButton) return;
+
+    saveButton.addEventListener('click', async function() {
+        const prefix = document.getElementById('botPrefix').value;
+        const displayName = document.getElementById('botDisplayName').value;
+
+        try {
+            saveButton.disabled = true;
+            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+            
+            const response = await fetch('/api/settings/branding', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prefix, displayName })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                showToast('Branding settings saved successfully!', 'success');
+            } else {
+                showToast('Failed to save branding settings', 'error');
+            }
+        } catch (e) {
+            showToast('An error occurred while saving branding', 'error');
+        } finally {
+            saveButton.disabled = false;
+            saveButton.innerHTML = '<i class="fas fa-save mr-2"></i> Save Branding';
+        }
+    });
 }
 
 function setupLanguageSettings() {

@@ -1,0 +1,161 @@
+<%- contentFor('body') %>
+
+<div class="bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl shadow-lg mb-6 overflow-hidden animate-fade-in">
+    <div class="relative p-6 md:p-8">
+        <div class="absolute right-0 top-0 opacity-10">
+            <i class="fas fa-share-alt fa-10x"></i>
+        </div>
+        <div class="relative z-10">
+            <h1 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">Social Integrations</h1>
+            <p class="text-red-100 mb-4 max-w-2xl">
+                Automatically notify your server about live streams and video uploads.
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Twitch -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border-l-4 border-purple-600">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-gray-800 dark:text-white flex items-center">
+                <i class="fab fa-twitch mr-2 text-purple-600"></i> Twitch Integration
+            </h2>
+            <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="twitchEnabled" class="sr-only peer" <%= settings.socialIntegration?.twitch?.enabled ? 'checked' : '' %>>
+                <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
+            </label>
+        </div>
+
+        <div class="space-y-4 twitch-controls <%= settings.socialIntegration?.twitch?.enabled ? '' : 'opacity-50 pointer-events-none' %>">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Twitch Channels (Usernames)</label>
+                <div id="twitchChannelsList" class="space-y-2 mb-2">
+                    <% (settings.socialIntegration?.twitch?.channels || []).forEach((channel, index) => { %>
+                        <div class="flex items-center space-x-2">
+                            <input type="text" class="twitch-channel w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5" value="<%= channel.username %>">
+                            <select class="twitch-channel-channel w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5">
+                                <% channels.forEach(c => { %>
+                                    <option value="<%= c.id %>" <%= channel.channelId === c.id ? 'selected' : '' %>># <%= c.name %></option>
+                                <% }) %>
+                            </select>
+                            <button onclick="this.parentElement.remove()" class="p-2.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"><i class="fas fa-trash"></i></button>
+                        </div>
+                    <% }) %>
+                </div>
+                <button id="addTwitchChannel" class="text-sm text-purple-600 hover:text-purple-700 font-bold"><i class="fas fa-plus mr-1"></i> Add Channel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- YouTube -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border-l-4 border-red-600">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-gray-800 dark:text-white flex items-center">
+                <i class="fab fa-youtube mr-2 text-red-600"></i> YouTube Integration
+            </h2>
+            <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="youtubeEnabled" class="sr-only peer" <%= settings.socialIntegration?.youtube?.enabled ? 'checked' : '' %>>
+                <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 dark:peer-focus:ring-red-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-red-600"></div>
+            </label>
+        </div>
+
+        <div class="space-y-4 youtube-controls <%= settings.socialIntegration?.youtube?.enabled ? '' : 'opacity-50 pointer-events-none' %>">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">YouTube Channels (IDs)</label>
+                <div id="youtubeChannelsList" class="space-y-2 mb-2">
+                    <% (settings.socialIntegration?.youtube?.channels || []).forEach((channel, index) => { %>
+                        <div class="flex items-center space-x-2">
+                            <input type="text" class="youtube-channel w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5" value="<%= channel.channelId %>">
+                            <select class="youtube-channel-channel w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5">
+                                <% channels.forEach(c => { %>
+                                    <option value="<%= c.id %>" <%= channel.discordChannelId === c.id ? 'selected' : '' %>># <%= c.name %></option>
+                                <% }) %>
+                            </select>
+                            <button onclick="this.parentElement.remove()" class="p-2.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"><i class="fas fa-trash"></i></button>
+                        </div>
+                    <% }) %>
+                </div>
+                <button id="addYoutubeChannel" class="text-sm text-red-600 hover:text-red-700 font-bold"><i class="fas fa-plus mr-1"></i> Add Channel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-6">
+    <button id="saveIntegrations" class="w-full flex items-center justify-center px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
+        <i class="fas fa-save mr-2"></i> Save Integrations
+    </button>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const twitchEnabled = document.getElementById('twitchEnabled');
+    const youtubeEnabled = document.getElementById('youtubeEnabled');
+    const addTwitchChannel = document.getElementById('addTwitchChannel');
+    const addYoutubeChannel = document.getElementById('addYoutubeChannel');
+    const saveButton = document.getElementById('saveIntegrations');
+
+    const channelOptions = `<% channels.forEach(c => { %><option value="<%= c.id %>"># <%= c.name %></option><% }) %>`;
+
+    addTwitchChannel.addEventListener('click', () => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center space-x-2';
+        div.innerHTML = `<input type="text" class="twitch-channel w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5" placeholder="Twitch Username"><select class="twitch-channel-channel w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5">${channelOptions}</select><button onclick="this.parentElement.remove()" class="p-2.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"><i class="fas fa-trash"></i></button>`;
+        document.getElementById('twitchChannelsList').appendChild(div);
+    });
+
+    addYoutubeChannel.addEventListener('click', () => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center space-x-2';
+        div.innerHTML = `<input type="text" class="youtube-channel w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5" placeholder="YouTube Channel ID"><select class="youtube-channel-channel w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5">${channelOptions}</select><button onclick="this.parentElement.remove()" class="p-2.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"><i class="fas fa-trash"></i></button>`;
+        document.getElementById('youtubeChannelsList').appendChild(div);
+    });
+
+    twitchEnabled.addEventListener('change', function() {
+        const controls = document.querySelector('.twitch-controls');
+        if (this.checked) controls.classList.remove('opacity-50', 'pointer-events-none');
+        else controls.classList.add('opacity-50', 'pointer-events-none');
+    });
+
+    youtubeEnabled.addEventListener('change', function() {
+        const controls = document.querySelector('.youtube-controls');
+        if (this.checked) controls.classList.remove('opacity-50', 'pointer-events-none');
+        else controls.classList.add('opacity-50', 'pointer-events-none');
+    });
+
+    saveButton.addEventListener('click', async function() {
+        const twitchChannels = Array.from(document.querySelectorAll('#twitchChannelsList > div')).map(div => ({
+            username: div.querySelector('.twitch-channel').value,
+            channelId: div.querySelector('.twitch-channel-channel').value
+        }));
+
+        const youtubeChannels = Array.from(document.querySelectorAll('#youtubeChannelsList > div')).map(div => ({
+            channelId: div.querySelector('.youtube-channel').value,
+            discordChannelId: div.querySelector('.youtube-channel-channel').value
+        }));
+
+        const settings = {
+            twitch: { enabled: twitchEnabled.checked, channels: twitchChannels },
+            youtube: { enabled: youtubeEnabled.checked, channels: youtubeChannels }
+        };
+
+        try {
+            saveButton.disabled = true;
+            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+            const response = await fetch('/api/integrations/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings)
+            });
+            const data = await response.json();
+            if (data.success) showToast('Integrations saved!', 'success');
+        } catch (e) {
+            showToast('Error saving integrations', 'error');
+        } finally {
+            saveButton.disabled = false;
+            saveButton.innerHTML = '<i class="fas fa-save mr-2"></i> Save Integrations';
+        }
+    });
+});
+</script>

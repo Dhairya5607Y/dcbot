@@ -1,0 +1,158 @@
+<%- contentFor('body') %>
+
+<div class="bg-gradient-to-r from-blue-500 to-cyan-600 text-white rounded-xl shadow-lg mb-6 overflow-hidden animate-fade-in">
+    <div class="relative p-6 md:p-8">
+        <div class="absolute right-0 top-0 opacity-10">
+            <i class="fas fa-chart-line fa-10x"></i>
+        </div>
+        <div class="relative z-10">
+            <h1 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-2"><%= locale.dashboard.navigation.leveling %></h1>
+            <p class="text-blue-100 mb-4 max-w-2xl">
+                Engage your community with a customizable XP and leveling system with rewards.
+            </p>
+            
+            <div class="flex flex-wrap gap-3 mt-4">
+                <div class="flex items-center gap-2 bg-white/20 rounded-full px-4 py-1.5">
+                    <div class="h-2.5 w-2.5 rounded-full <%= settings.leveling?.enabled ? 'bg-green-400 animate-pulse' : 'bg-red-400' %>"></div>
+                    <span class="text-sm font-medium"><%= settings.leveling?.enabled ? 'Active' : 'Disabled' %></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main Settings -->
+    <div class="lg:col-span-2 space-y-6">
+        <!-- System Control -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white">System Status</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Enable or disable the leveling system</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="levelingEnabled" class="sr-only peer" <%= settings.leveling?.enabled ? 'checked' : '' %>>
+                    <div class="w-14 h-7 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                </label>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 leveling-controls <%= settings.leveling?.enabled ? '' : 'opacity-50 pointer-events-none' %>">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">XP Range (Per Message)</label>
+                    <div class="flex items-center space-x-2">
+                        <input type="number" id="xpMin" value="<%= settings.leveling?.xpPerMessage?.min || 15 %>" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5" placeholder="Min">
+                        <span class="text-gray-500">-</span>
+                        <input type="number" id="xpMax" value="<%= settings.leveling?.xpPerMessage?.max || 25 %>" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5" placeholder="Max">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">XP Cooldown (Seconds)</label>
+                    <input type="number" id="xpCooldown" value="<%= (settings.leveling?.cooldown || 60000) / 1000 %>" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5">
+                </div>
+            </div>
+        </div>
+
+        <!-- Announcements -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 leveling-controls <%= settings.leveling?.enabled ? '' : 'opacity-50 pointer-events-none' %>">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">Announcements</h2>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="levelUpAnnounce" class="sr-only peer" <%= settings.leveling?.announcement?.enabled ? 'checked' : '' %>>
+                    <div class="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                </label>
+            </div>
+
+            <div class="space-y-4 announcement-controls <%= settings.leveling?.announcement?.enabled ? '' : 'hidden' %>">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Announcement Channel</label>
+                    <select id="announceChannel" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5">
+                        <option value="current" <%= settings.leveling?.announcement?.channel === 'current' ? 'selected' : '' %>>Current Channel</option>
+                        <option value="dm" <%= settings.leveling?.announcement?.channel === 'dm' ? 'selected' : '' %>>User DM</option>
+                        <% channels.forEach(channel => { %>
+                            <option value="<%= channel.id %>" <%= settings.leveling?.announcement?.channel === channel.id ? 'selected' : '' %>># <%= channel.name %></option>
+                        <% }) %>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Level Up Message</label>
+                    <textarea id="levelUpMessage" rows="2" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5"><%= settings.leveling?.announcement?.message %></textarea>
+                    <p class="mt-1 text-[10px] text-gray-500">Variables: {user}, {level}, {xp}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Level Rewards -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 leveling-controls <%= settings.leveling?.enabled ? '' : 'opacity-50 pointer-events-none' %>">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">Level Rewards</h2>
+                <button id="addReward" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors">
+                    <i class="fas fa-plus mr-2"></i> Add Reward
+                </button>
+            </div>
+
+            <div id="rewardsList" class="space-y-4">
+                <% (settings.leveling?.rewards || []).forEach((reward, index) => { %>
+                    <div class="reward-item flex items-center space-x-4 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <div class="w-24">
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Level</label>
+                            <input type="number" class="reward-level w-full bg-white dark:bg-gray-800 border-none text-sm rounded-lg" value="<%= reward.level %>" min="1">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Role Reward</label>
+                            <select class="reward-role-id w-full bg-white dark:bg-gray-800 border-none text-sm rounded-lg">
+                                <% roles.forEach(role => { %>
+                                    <option value="<%= role.id %>" <%= reward.roleId === role.id ? 'selected' : '' %>>@ <%= role.name %></option>
+                                <% }) %>
+                            </select>
+                        </div>
+                        <button class="remove-reward text-red-500 hover:text-red-700 mt-4">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                <% }) %>
+            </div>
+        </div>
+
+        <!-- Ignored Settings -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 leveling-controls <%= settings.leveling?.enabled ? '' : 'opacity-50 pointer-events-none' %>">
+            <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6">Ignored Content</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Ignored Channels</label>
+                    <select id="ignoredChannels" multiple class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5 min-h-[100px]">
+                        <% channels.forEach(channel => { %>
+                            <option value="<%= channel.id %>" <%= (settings.leveling?.ignoredChannels || []).includes(channel.id) ? 'selected' : '' %>># <%= channel.name %></option>
+                        <% }) %>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Ignored Roles</label>
+                    <select id="ignoredRoles" multiple class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5 min-h-[100px]">
+                        <% roles.forEach(role => { %>
+                            <option value="<%= role.id %>" <%= (settings.leveling?.ignoredRoles || []).includes(role.id) ? 'selected' : '' %>>@ <%= role.name %></option>
+                        <% }) %>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="space-y-6">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 sticky top-6">
+            <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6">Actions</h2>
+            <div class="space-y-4">
+                <button id="saveLevelingSettings" class="w-full flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    <i class="fas fa-save mr-2"></i>
+                    Save Settings
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const availableRoles = <%- JSON.stringify(roles) %>;
+</script>
+<script src="/js/leveling.js"></script>

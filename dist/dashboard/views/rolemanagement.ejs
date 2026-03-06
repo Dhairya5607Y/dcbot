@@ -1,0 +1,124 @@
+<%- contentFor('body') %>
+
+<div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-lg mb-6 overflow-hidden animate-fade-in">
+    <div class="relative p-6 md:p-8">
+        <div class="absolute right-0 top-0 opacity-10">
+            <i class="fas fa-users-cog fa-10x"></i>
+        </div>
+        <div class="relative z-10">
+            <h1 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">Role Management</h1>
+            <p class="text-blue-100 mb-4 max-w-2xl">
+                Configure auto-roles, reaction roles, and role hierarchy enforcement.
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Auto Roles -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+        <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
+            <i class="fas fa-user-plus mr-2 text-blue-500"></i> Auto Roles
+        </h2>
+        <div class="space-y-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400">These roles will be automatically assigned to new members when they join.</p>
+            <div id="autoRolesList" class="space-y-2">
+                <% (settings.roleManagement?.autoRoles || []).forEach(roleId => { %>
+                    <div class="flex items-center space-x-2">
+                        <select class="auto-role w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5">
+                            <% roles.forEach(role => { %>
+                                <option value="<%= role.id %>" <%= roleId === role.id ? 'selected' : '' %>>@ <%= role.name %></option>
+                            <% }) %>
+                        </select>
+                        <button onclick="this.parentElement.remove()" class="p-2.5 text-red-600 hover:bg-red-50 rounded-lg"><i class="fas fa-trash"></i></button>
+                    </div>
+                <% }) %>
+            </div>
+            <button id="addAutoRole" class="text-sm text-blue-600 hover:text-blue-700 font-bold"><i class="fas fa-plus mr-1"></i> Add Auto Role</button>
+        </div>
+    </div>
+
+    <!-- Reaction Roles -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+        <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
+            <i class="fas fa-grin mr-2 text-yellow-500"></i> Reaction Roles
+        </h2>
+        <div class="space-y-4">
+            <div id="reactionRolesList" class="space-y-4">
+                <% (settings.roleManagement?.reactionRoles || []).forEach(rr => { %>
+                    <div class="reaction-role-item border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-2">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" class="rr-message-id w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2" placeholder="Message ID" value="<%= rr.messageId %>">
+                            <input type="text" class="rr-emoji w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2" placeholder="Emoji" value="<%= rr.emoji %>">
+                        </div>
+                        <select class="rr-role w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2">
+                            <% roles.forEach(role => { %>
+                                <option value="<%= role.id %>" <%= rr.roleId === role.id ? 'selected' : '' %>>@ <%= role.name %></option>
+                            <% }) %>
+                        </select>
+                        <button onclick="this.closest('.reaction-role-item').remove()" class="text-red-600 hover:text-red-700 text-xs font-bold"><i class="fas fa-trash mr-1"></i> Remove</button>
+                    </div>
+                <% }) %>
+            </div>
+            <button id="addReactionRole" class="text-sm text-yellow-600 hover:text-yellow-700 font-bold"><i class="fas fa-plus mr-1"></i> Add Reaction Role</button>
+        </div>
+    </div>
+</div>
+
+<div class="mt-6">
+    <button id="saveRoleManagement" class="w-full flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
+        <i class="fas fa-save mr-2"></i> Save Role Settings
+    </button>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const autoRolesList = document.getElementById('autoRolesList');
+    const reactionRolesList = document.getElementById('reactionRolesList');
+    const addAutoRole = document.getElementById('addAutoRole');
+    const addReactionRole = document.getElementById('addReactionRole');
+    const saveButton = document.getElementById('saveRoleManagement');
+    
+    const roleOptions = `<% roles.forEach(role => { %><option value="<%= role.id %>">@ <%= role.name %></option><% }) %>`;
+
+    addAutoRole.addEventListener('click', () => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center space-x-2';
+        div.innerHTML = `<select class="auto-role w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2.5">${roleOptions}</select><button onclick="this.parentElement.remove()" class="p-2.5 text-red-600 hover:bg-red-50 rounded-lg"><i class="fas fa-trash"></i></button>`;
+        autoRolesList.appendChild(div);
+    });
+
+    addReactionRole.addEventListener('click', () => {
+        const div = document.createElement('div');
+        div.className = 'reaction-role-item border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-2';
+        div.innerHTML = `<div class="grid grid-cols-2 gap-2"><input type="text" class="rr-message-id w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2" placeholder="Message ID"><input type="text" class="rr-emoji w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2" placeholder="Emoji"></div><select class="rr-role w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg p-2">${roleOptions}</select><button onclick="this.closest('.reaction-role-item').remove()" class="text-red-600 hover:text-red-700 text-xs font-bold"><i class="fas fa-trash mr-1"></i> Remove</button>`;
+        reactionRolesList.appendChild(div);
+    });
+
+    saveButton.addEventListener('click', async function() {
+        const autoRoles = Array.from(document.querySelectorAll('.auto-role')).map(s => s.value);
+        const reactionRoles = Array.from(document.querySelectorAll('.reaction-role-item')).map(item => ({
+            messageId: item.querySelector('.rr-message-id').value,
+            emoji: item.querySelector('.rr-emoji').value,
+            roleId: item.querySelector('.rr-role').value
+        }));
+
+        try {
+            saveButton.disabled = true;
+            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+            const response = await fetch('/api/rolemanagement/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ autoRoles, reactionRoles, hierarchyEnforcement: true })
+            });
+            const data = await response.json();
+            if (data.success) showToast('Role settings saved!', 'success');
+        } catch (e) {
+            showToast('Error saving role settings', 'error');
+        } finally {
+            saveButton.disabled = false;
+            saveButton.innerHTML = '<i class="fas fa-save mr-2"></i> Save Role Settings';
+        }
+    });
+});
+</script>
