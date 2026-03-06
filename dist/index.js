@@ -135,6 +135,12 @@ class ModBot extends discord_js_1.Client {
     }
     async init() {
         try {
+            console.log('[INIT] Starting dashboard FIRST before any Discord operations...');
+            const dashboard = new server_1.Dashboard(this);
+            console.log('[INIT] Dashboard created, calling start()...');
+            dashboard.start();
+            console.log('[INIT] Dashboard started! Now proceeding with bot initialization...');
+            
             await mongoose_1.default.connect(config_1.default.mongoUri);
             console.log('Connected to MongoDB');
             const localesPath = (0, path_1.join)(__dirname, 'src', 'locales');
@@ -634,11 +640,6 @@ class ModBot extends discord_js_1.Client {
                 }
             });
             this.on(discord_js_1.Events.VoiceStateUpdate, tempChannelHandler_1.handleVoiceStateUpdate);
-            console.log('[INIT] About to create dashboard...');
-            const dashboard = new server_1.Dashboard(this);
-            console.log('[INIT] Dashboard created, calling start()...');
-            dashboard.start();
-            console.log('[INIT] Dashboard start() called, now logging in to Discord...');
             await this.login(config_1.default.token);
             console.log(`Logged in as ${this.user?.tag}`);
             (0, cleanupTranscripts_1.startTranscriptCleanup)();
