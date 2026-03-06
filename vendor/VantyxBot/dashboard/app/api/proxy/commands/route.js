@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import config from "@config";
+import config from "@/utils/config";
 import fs from "fs";
 import path from "path";
 
