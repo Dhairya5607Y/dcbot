@@ -5,7 +5,7 @@ const Warning = require("../models/Warning");
 const ActivityLog = require("../models/ActivityLog");
 const { checkGuildPermission } = require("../middleware/auth");
 const { getCachedUser } = require("../utils/discordCache");
-const config = require("../../config");
+const config = require("../utils/api-config");
 const logger = require("../utils/logger");
 
 // =======================

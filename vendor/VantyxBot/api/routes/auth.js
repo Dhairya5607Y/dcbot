@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const DiscordOauth2 = require("discord-oauth2");
-const config = require("../../config");
+const config = require("../utils/api-config");
 const logger = require("../utils/logger");
 const DashboardUser = require("../models/DashboardUser");
 

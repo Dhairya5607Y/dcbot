@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const config = require("../../config");
+const config = require("../utils/api-config");
 
 const guildSchema = new mongoose.Schema({
   _id: String, // Guild ID
