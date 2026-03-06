@@ -176,7 +176,9 @@ class ModBot extends discord_js_1.Client {
             const slashCommands = [];
             const commandFolders = (0, fs_1.readdirSync)((0, path_1.join)(__dirname, 'src', 'commands'));
             for (const folder of commandFolders) {
-                const commandFiles = (0, fs_1.readdirSync)((0, path_1.join)(__dirname, 'src', 'commands', folder));
+                const commandPath = (0, path_1.join)(__dirname, 'src', 'commands', folder);
+                if (!(0, fs_1.statSync)(commandPath).isDirectory()) continue;
+                const commandFiles = (0, fs_1.readdirSync)(commandPath);
                 for (const file of commandFiles) {
                     const command = require((0, path_1.join)(__dirname, 'src', 'commands', folder, file));
                     if ('data' in command) {
@@ -193,7 +195,17 @@ class ModBot extends discord_js_1.Client {
                     }
                 }
             }
-            this.deployCommands(slashCommands);
+            // Deployment logic
+            try {
+                console.log(`Started refreshing ${slashCommands.length} application (/) commands.`);
+                const rest = new discord_js_1.REST().setToken(config_1.default.token);
+                await rest.put(discord_js_1.Routes.applicationCommands(config_1.default.clientId), { body: slashCommands });
+                console.log('Successfully reloaded application (/) commands.');
+            }
+            catch (error) {
+                console.error('Error deploying commands:', error);
+            }
+
             this.on(discord_js_1.Events.InteractionCreate, async (interaction) => {
                 await handleSelectRoles(interaction, this);
                 
@@ -436,10 +448,33 @@ class ModBot extends discord_js_1.Client {
                 }
                 await (0, suggestionHandler_1.handleSuggestion)(message);
                 await (0, autoReplyHandler_1.handleAutoReply)(message);
-                const args = message.content.trim().split(/ +/);
+
+                const prefix = this.settings.branding?.prefix || config_1.default.defaultPrefix || '!';
+                if (!message.content.startsWith(prefix)) return;
+
+                const args = message.content.slice(prefix.length).trim().split(/ +/);
                 const commandName = args.shift()?.toLowerCase();
                 if (!commandName)
                     return;
+
+                // Hardcoded prefix commands
+                if (commandName === 'rules') {
+                    const rules = this.settings.rules?.message || 'No rules configured.';
+                    return message.channel.send({ content: `@everyone\n\n${rules}` });
+                }
+
+                if (commandName === 'announce') {
+                    const announcement = args.join(' ');
+                    if (!announcement) return message.reply('Please provide a message to announce!');
+                    
+                    const words = announcement.split(' ');
+                    const lastWord = words[words.length - 1];
+                    const hasGif = lastWord.startsWith('http') && (lastWord.includes('gif') || lastWord.includes('tenor') || lastWord.includes('giphy'));
+                    
+                    let content = `@everyone\n\n${announcement}`;
+                    return message.channel.send({ content });
+                }
+
                 let command = this.commands.get(commandName);
                 if (!command) {
                     const aliasCommand = this.aliases.get(commandName);
@@ -450,9 +485,7 @@ class ModBot extends discord_js_1.Client {
                 if (!command || !command.command.enabled) {
                     return;
                 }
-                if (!command.command.aliases?.includes(commandName) && message.content.startsWith(config_1.default.defaultPrefix)) {
-                    return;
-                }
+                
                 try {
                     if (command.command.name === 'user' && args.length > 0) {
                         const targetId = args[0].replace(/[<@!>]/g, '');

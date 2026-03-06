@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+require('dotenv').config();
 const fs_1 = require("fs");
 const path_1 = require("path");
 const config = {
@@ -16,6 +17,18 @@ const config = {
         callbackUrl: process.env.CALLBACK_URL || 'http://localhost:3001/auth/callback',
         clientSecret: process.env.DISCORD_CLIENT_SECRET || 'YOUR_CLIENT_SECRET_HERE',
         domain: process.env.DASHBOARD_DOMAIN || 'http://localhost:3001'
+    },
+    integrations: {
+        twitch: {
+            clientId: process.env.TWITCH_CLIENT_ID || '',
+            clientSecret: process.env.TWITCH_CLIENT_SECRET || ''
+        },
+        youtube: {
+            apiKey: process.env.YOUTUBE_API_KEY || ''
+        },
+        ai: {
+            perspectiveApiKey: process.env.PERSPECTIVE_API_KEY || ''
+        }
     }
 };
 function loadSettingsFile() {

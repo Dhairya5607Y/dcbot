@@ -171,6 +171,21 @@ class Dashboard {
         return await response.json();
     }
     routes() {
+        this.app.get('/', (req, res) => {
+            if (req.session.user) {
+                return res.redirect('/dashboard');
+            }
+            const currentLang = req.cookies?.preferredLanguage || 'en';
+            const locale = this.getLocale(currentLang);
+            res.render('index', {
+                title: 'Home',
+                user: null,
+                currentLang,
+                locale,
+                path: '/'
+            });
+        });
+
         this.app.get('/auth/login', (_req, res) => {
             const redirectUri = encodeURIComponent(config_1.default.dashboard.callbackUrl);
             const scope = encodeURIComponent('identify guilds');
@@ -250,6 +265,8 @@ class Dashboard {
         this.app.get('/dashboard/:guildId', this.requireAdmin.bind(this), async (req, res) => {
             const currentLang = req.cookies?.preferredLanguage || 'en';
             const locale = this.getLocale(currentLang);
+            const guild = res.locals.guild;
+            
             try {
                 req.session.selectedGuild = req.params.guildId;
                 const stats = await this.generateDashboardStats();
@@ -260,6 +277,7 @@ class Dashboard {
                     users: { percentage: 12, direction: 'up', period: 'month' },
                     commands: { percentage: 8, direction: 'up', period: 'day' }
                 };
+                
                 return res.render('index', {
                     title: locale.dashboard.title,
                     stats,
@@ -279,46 +297,22 @@ class Dashboard {
             }
             catch (error) {
                 console.error('Error rendering guild dashboard:', error);
-                return res.status(500).send('Internal Server Error');
+                res.status(500).send('Internal Server Error');
             }
         });
-        this.app.get('/', async (_req, res) => {
-            const currentLang = _req.cookies?.preferredLanguage || 'en';
+        this.app.get('/', (req, res) => {
+            if (req.session.user) {
+                return res.redirect('/dashboard');
+            }
+            const currentLang = req.cookies?.preferredLanguage || 'en';
             const locale = this.getLocale(currentLang);
-            try {
-                const stats = await this.generateDashboardStats();
-                const moduleStatus = this.getModuleStatus();
-                const recentActivity = await this.getRecentActivity();
-                const trends = {
-                    servers: { percentage: 5, direction: 'up', period: 'week' },
-                    users: { percentage: 12, direction: 'up', period: 'month' },
-                    commands: { percentage: 8, direction: 'up', period: 'day' }
-                };
-                return res.render('index', {
-                    title: locale.dashboard.title,
-                    stats,
-                    trends,
-                    moduleStatus,
-                    recentActivity,
-                    settings: this.client.settings,
-                    client: this.client,
-                    config: config_1.default,
-                    path: '/',
-                    currentLang,
-                    locale,
-                    user: _req.session.user || null,
-                    breadcrumbs: this.getBreadcrumbs('/')
-                });
-            }
-            catch (error) {
-                console.error('Error rendering index page:', error);
-                return res.status(500).render('error', {
-                    title: 'Error',
-                    error: { code: 500, message: 'Internal Server Error' },
-                    currentLang,
-                    locale
-                });
-            }
+            res.render('index', {
+                title: 'Home',
+                user: null,
+                currentLang,
+                locale,
+                path: '/'
+            });
         });
         this.app.get('/docs', (_req, res) => {
             try {

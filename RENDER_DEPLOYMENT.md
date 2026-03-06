@@ -159,16 +159,28 @@ Fill in the following settings:
 
 Click "Advanced" and add the following environment variables:
 
+**Core Variables (Required):**
 | Key | Value | Description |
 |-----|-------|-------------|
 | `DISCORD_TOKEN` | Your bot token | From Discord Developer Portal |
 | `CLIENT_ID` | Your application ID | From Discord Developer Portal |
+| `DISCORD_CLIENT_SECRET` | Your client secret | From Discord Developer Portal → OAuth2 |
 | `MONGO_URI` | Your MongoDB connection string | From MongoDB Atlas |
 | `OWNER_ID` | Your Discord user ID | Right-click your profile → Copy ID |
 | `MAIN_GUILD_ID` | Your main server ID | Right-click server icon → Copy ID |
 | `DASHBOARD_SECRET` | Random secure string | Generate a random string |
+| `CALLBACK_URL` | `https://your-app-name.onrender.com/auth/callback` | Updated callback URL |
+| `DASHBOARD_DOMAIN` | `https://your-app-name.onrender.com` | Updated domain |
 | `PORT` | `3001` | Port for the dashboard |
 | `NODE_ENV` | `production` | Environment mode |
+
+**Integration Variables (Optional):**
+| Key | Value | Description |
+|-----|-------|-------------|
+| `TWITCH_CLIENT_ID` | Your Twitch Client ID | From Twitch Developer Console |
+| `TWITCH_CLIENT_SECRET` | Your Twitch Secret | From Twitch Developer Console |
+| `YOUTUBE_API_KEY` | Your YouTube API Key | From Google Cloud Console |
+| `PERSPECTIVE_API_KEY` | Your Perspective API Key | From Google Perspective API |
 
 **To get your Discord User ID:**
 1. Enable Developer Mode in Discord (Settings → Advanced → Developer Mode)
