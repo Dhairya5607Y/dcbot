@@ -50,7 +50,10 @@ class Dashboard {
         return `${minutes}m`;
     }
     getPing() {
-        return Math.round(this.client.ws.ping);
+        if (!this.client.ws)
+            return 0;
+        const ping = this.client.ws.ping;
+        return ping === -1 ? 0 : Math.round(ping);
     }
     getBreadcrumbs(path) {
         const parts = path.split('/').filter(Boolean);
@@ -63,6 +66,7 @@ class Dashboard {
         }).join(' ');
     }
     setup() {
+        this.app.set('trust proxy', 1);
         this.app.set('view engine', 'ejs');
         this.app.set('views', path_1.default.join(__dirname, 'views'));
         this.app.use(express_ejs_layouts_1.default);
@@ -78,8 +82,21 @@ class Dashboard {
                 title: 'Dashboard',
                 guild: null,
                 user: null,
-                stats: null,
-                moduleStatus: null,
+                stats: {
+                    servers: 0,
+                    users: 0,
+                    commands: 0,
+                    uptime: '0m',
+                    ping: 0,
+                    memoryUsage: 0
+                },
+                moduleStatus: {
+                    protection: { enabled: false, activeRules: 0 },
+                    tickets: { enabled: false, sections: 0 },
+                    apply: { enabled: false, positions: 0 },
+                    rules: { enabled: false, sections: 0 },
+                    giveaway: { enabled: false }
+                },
                 recentActivity: [],
                 trends: {
                     servers: { percentage: 0, direction: 'up', period: 'week' },
@@ -109,7 +126,12 @@ class Dashboard {
             secret: config_1.default.dashboard.secret,
             resave: false,
             saveUninitialized: false,
-            cookie: { secure: isProduction }
+            proxy: isProduction,
+            cookie: { 
+                secure: isProduction,
+                maxAge: 24 * 60 * 60 * 1000, // 24 hours
+                sameSite: isProduction ? 'lax' : 'lax'
+            }
         }));
         this.app.use(express_1.default.json());
         this.app.use((0, cookie_parser_1.default)());
@@ -274,7 +296,14 @@ class Dashboard {
                 if (mutualGuilds.length > 0) {
                     req.session.selectedGuild = mutualGuilds[0].id;
                 }
-                res.redirect('/dashboard');
+                
+                req.session.save((err) => {
+                    if (err) {
+                        console.error('Session save error:', err);
+                        return res.redirect('/');
+                    }
+                    res.redirect('/dashboard');
+                });
             }
             catch (error) {
                 console.error('OAuth callback error:', error);
