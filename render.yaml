@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: lr7-community-bot
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: CLIENT_ID
+        sync: false
+      - key: MONGO_URI
+        sync: false
+      - key: OWNER_ID
+        sync: false
+      - key: MAIN_GUILD_ID
+        sync: false
+      - key: DASHBOARD_SECRET
+        generateValue: true
+      - key: CALLBACK_URL
+        value: https://lr7-community-bot.onrender.com/auth/callback
