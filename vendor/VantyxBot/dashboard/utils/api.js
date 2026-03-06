@@ -1,4 +1,4 @@
-import config from "@/utils/config";
+import config from "./config";
 
 // Use CLIENT_API_URL for API requests (usually localhost:4000)
 const API_BASE_URL = `${config.API_URL}:${config.API_PORT}`;
