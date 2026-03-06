@@ -1,5 +1,6 @@
 const Discord = require('discord.js');
 const fs = require('fs');
+const chalk = require('chalk');
 
 const { Manager } = require("erela.js");
 const Spotify = require("erela.js-spotify");
