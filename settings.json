@@ -833,7 +833,7 @@
     },
     "verification": {
         "enabled": false,
-        "type": "button", // button or captcha
+        "type": "button",
         "roleId": "",
         "channelId": "",
         "message": "Click the button below to verify!",
