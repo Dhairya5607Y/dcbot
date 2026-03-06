@@ -29,35 +29,37 @@ module.exports = (client) => {
 
     const rest = new REST({ version: '9' }).setToken(process.env.DISCORD_TOKEN);
 
-    (async () => {
-        try {
-            const embed = new Discord.EmbedBuilder()
-                .setDescription(`Started refreshing application (/) commands.`)
-                .setColor(client.config.colors.normal)
-            interactionLogs.send({
-                username: 'Bot Logs',
-                embeds: [embed]
-            });
+    client.once('ready', async () => {
+        (async () => {
+            try {
+                const embed = new Discord.EmbedBuilder()
+                    .setDescription(`Started refreshing application (/) commands.`)
+                    .setColor(client.config.colors.normal)
+                interactionLogs.send({
+                    username: 'Bot Logs',
+                    embeds: [embed]
+                });
 
-            console.log(chalk.blue(chalk.bold(`System`)), (chalk.white(`>>`)), (chalk.green(`Started refreshing application (/) commands`)));
-            await rest.put(
-                Routes.applicationCommands(process.env.DISCORD_ID || client.user.id),
-                { body: commands },
-            )
-            console.log(chalk.blue(chalk.bold(`System`)), (chalk.white(`>>`)), (chalk.green(`Successfully reloaded ${commands.length} application (/) commands`)));
+                console.log(chalk.blue(chalk.bold(`System`)), (chalk.white(`>>`)), (chalk.green(`Started refreshing application (/) commands`)));
+                await rest.put(
+                    Routes.applicationCommands(process.env.DISCORD_ID || client.user.id),
+                    { body: commands },
+                )
+                console.log(chalk.blue(chalk.bold(`System`)), (chalk.white(`>>`)), (chalk.green(`Successfully reloaded ${commands.length} application (/) commands`)));
 
-            const embedFinal = new Discord.EmbedBuilder()
-                .setDescription(`Successfully reloaded ${commands.length} application (/) commands.`)
-                .setColor(client.config.colors.normal)
-            interactionLogs.send({
-                username: 'Bot Logs',
-                embeds: [embedFinal]
-            });
+                const embedFinal = new Discord.EmbedBuilder()
+                    .setDescription(`Successfully reloaded ${commands.length} application (/) commands.`)
+                    .setColor(client.config.colors.normal)
+                interactionLogs.send({
+                    username: 'Bot Logs',
+                    embeds: [embedFinal]
+                });
 
-        } catch (error) {
-            console.log(error);
-        }
-    })();
+            } catch (error) {
+                console.log(chalk.red(`[ERROR]`), chalk.white(`>>`), chalk.red(`Failed to register commands!`), chalk.white(`>>`), chalk.red(`Error: ${error}`));
+            }
+        })();
+    });
 }
 
  

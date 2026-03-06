@@ -9,6 +9,17 @@ const Deezer = require("erela.js-deezer");
 const AppleMusic = require("erela.js-apple");
 
 // Discord client
+if (!process.env.DISCORD_TOKEN) {
+    console.error(chalk.red(`[FATAL]`), chalk.white(`>>`), chalk.red(`DISCORD_TOKEN is missing in environment variables!`));
+    process.exit(1);
+}
+
+// Basic token validation
+const tokenParts = process.env.DISCORD_TOKEN.split('.');
+if (tokenParts.length !== 3) {
+    console.warn(chalk.yellow(`[WARNING]`), chalk.white(`>>`), chalk.yellow(`DISCORD_TOKEN format looks invalid. Please double-check it.`));
+}
+
 const client = new Discord.Client({
     allowedMentions: {
         parse: [
@@ -48,6 +59,17 @@ const client = new Discord.Client({
         Discord.GatewayIntentBits.MessageContent
     ],
     restTimeOffset: 0
+});
+
+// Intent check logging
+client.on('ready', () => {
+    const privilegedIntents = ['GuildMembers', 'MessageContent'];
+    privilegedIntents.forEach(intent => {
+        if (client.options.intents.has(Discord.GatewayIntentBits[intent])) {
+            console.log(chalk.blue(chalk.bold(`System`)), (chalk.white(`>>`)), (chalk.green(`Privileged intent ${intent} is ENABLED in code.`)));
+        }
+    });
+    console.log(chalk.blue(chalk.bold(`System`)), (chalk.white(`>>`)), (chalk.yellow(`Note: Please ensure these are also enabled in the Discord Developer Portal!`)));
 });
 
 
