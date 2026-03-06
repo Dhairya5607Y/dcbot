@@ -36,7 +36,7 @@ const shardLogs = (webhook.shardLogs.id && webhook.shardLogs.token) ? new Discor
 }) : { send: () => {} };
 
 const manager = new Discord.ShardingManager('./src/bot.js', {
-    totalShards: 'auto',
+    totalShards: process.env.NODE_ENV === 'production' ? 1 : 'auto',
     token: process.env.DISCORD_TOKEN,
     respawn: true
 });

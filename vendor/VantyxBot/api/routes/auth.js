@@ -8,7 +8,7 @@ const DashboardUser = require("../models/DashboardUser");
 const oauth = new DiscordOauth2({
   clientId: config.CLIENT_ID,
   clientSecret: config.CLIENT_SECRET,
-  redirectUri: `${config.DASHBOARD_URL}/login`,
+  redirectUri: config.DASHBOARD_URL.endsWith("/") ? `${config.DASHBOARD_URL}login` : `${config.DASHBOARD_URL}/login`,
 });
 
 const { getCachedUser } = require("../utils/discordCache");
@@ -21,7 +21,7 @@ const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 router.get("/config", (req, res) => {
   res.json({
     clientId: config.CLIENT_ID,
-    redirectUri: `${config.DASHBOARD_URL}/login`,
+    redirectUri: config.DASHBOARD_URL.endsWith("/") ? `${config.DASHBOARD_URL}login` : `${config.DASHBOARD_URL}/login`,
   });
 });
 

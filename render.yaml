@@ -59,11 +59,17 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NEXT_PUBLIC_DASHBOARD_URL
+        sync: false
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
+      - key: NEXT_PUBLIC_API_PORT
+        value: "443"
+      - key: NEXT_PUBLIC_PROJECT_VERSION
+        value: "1.0"
       - key: DASHBOARD_URL
         sync: false
       - key: API_URL
         sync: false
       - key: API_PORT
         value: "443"
-      - key: PROJECT_VERSION
-        value: "1.0"
