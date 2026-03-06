@@ -116,11 +116,39 @@ for (const file of events) {
 require("./database/connect")();
 
 // Client settings
-client.config = require('./config/bot');
-client.changelogs = require('./config/changelogs');
-client.emotes = require("./config/emojis.json");
-client.webhooks = require("./config/webhooks.json");
+try {
+    client.config = require('./config/bot');
+} catch (err) {
+    client.config = { colors: { normal: '#5865F2' }, discord: { footer: '© Corwin' } };
+}
+
+try {
+    client.changelogs = require('./config/changelogs');
+} catch (err) {
+    client.changelogs = {};
+}
+
+try {
+    client.emotes = require("./config/emojis.json");
+} catch (err) {
+    client.emotes = {};
+}
+
+try {
+    client.webhooks = require("./config/webhooks.json");
+} catch (err) {
+    client.webhooks = {};
+}
+
 const webHooksArray = ['startLogs', 'shardLogs', 'errorLogs', 'dmLogs', 'voiceLogs', 'serverLogs', 'serverLogs2', 'commandLogs', 'consoleLogs', 'warnLogs', 'voiceErrorLogs', 'creditLogs', 'evalLogs', 'interactionLogs'];
+
+// Ensure all webhook entries exist
+for (const webhookName of webHooksArray) {
+    if (!client.webhooks[webhookName]) {
+        client.webhooks[webhookName] = { id: "", token: "" };
+    }
+}
+
 // Check if .env webhook_id and webhook_token are set
 if (process.env.WEBHOOK_ID && process.env.WEBHOOK_TOKEN) {
     for (const webhookName of webHooksArray) {

@@ -13,9 +13,30 @@ axios.get('https://api.github.com/repos/CorwinDev/Discord-Bot/releases/latest').
 });
 
 
-const webhook = require("./config/webhooks.json");
-const config = require("./config/bot.js");
+let webhook = {};
+try {
+    webhook = require("./config/webhooks.json");
+} catch (err) {
+    console.warn(chalk.yellow(`Warning: ./config/webhooks.json not found. Using environment variables or empty fallback.`));
+}
+
+let config = {};
+try {
+    config = require("./config/bot.js");
+} catch (err) {
+    console.warn(chalk.yellow(`Warning: ./config/bot.js not found. Using empty fallback.`));
+    config = { colors: { normal: '#5865F2' }, discord: { footer: '© Corwin' } };
+}
+
 const webHooksArray = ['startLogs', 'shardLogs', 'errorLogs', 'dmLogs', 'voiceLogs', 'serverLogs', 'serverLogs2', 'commandLogs', 'consoleLogs', 'warnLogs', 'voiceErrorLogs', 'creditLogs', 'evalLogs', 'interactionLogs'];
+
+// Ensure all webhook entries exist
+for (const webhookName of webHooksArray) {
+    if (!webhook[webhookName]) {
+        webhook[webhookName] = { id: "", token: "" };
+    }
+}
+
 // Check if .env webhook_id and webhook_token are set
 if (process.env.WEBHOOK_ID && process.env.WEBHOOK_TOKEN) {
     for (const webhookName of webHooksArray) {
