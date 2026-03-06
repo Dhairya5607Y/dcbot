@@ -7,7 +7,7 @@ import {
   FileText,
   Heart,
 } from "lucide-react";
-import config from "../utils/config";
+import config from "../utils/dashboard-config";
 import Image from "next/image";
 
 export default function Footer() {

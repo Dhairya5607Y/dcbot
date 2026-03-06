@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import config from "../../utils/config";
+import config from "../../utils/dashboard-config";
 
 export default function ProfilePage() {
   const [user, setUser] = useState(null);

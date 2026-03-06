@@ -18,7 +18,7 @@ import {
   Bell,
 } from "lucide-react";
 import { formatUptime } from "@/utils/formatUptime";
-import config from "../utils/config";
+import config from "../utils/dashboard-config";
 
 export default function Home() {
   const [stats, setStats] = useState({

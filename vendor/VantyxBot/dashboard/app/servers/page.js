@@ -10,7 +10,7 @@ import {
   Sparkles,
   KeyIcon,
 } from "lucide-react";
-import config from "../../utils/config";
+import config from "../../utils/dashboard-config";
 import Image from "next/image";
 import { api } from "@/utils/api";
 
