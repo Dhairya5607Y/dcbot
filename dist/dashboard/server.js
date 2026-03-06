@@ -1604,12 +1604,15 @@ class Dashboard {
     }
     start() {
         try {
-            this.app.listen(config_1.default.dashboard.port, () => {
-                console.log(`Dashboard running at http://localhost:${config_1.default.dashboard.port}`);
+            const port = config_1.default.dashboard.port;
+            this.app.listen(port, '0.0.0.0', () => {
+                console.log(`Dashboard running on port ${port}`);
+                console.log(`Dashboard accessible at http://0.0.0.0:${port}`);
             });
         }
         catch (error) {
             console.error('Failed to start dashboard:', error);
+            throw error;
         }
     }
     async generateDashboardStats() {
