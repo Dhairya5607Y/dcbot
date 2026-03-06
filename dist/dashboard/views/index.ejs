@@ -12,14 +12,22 @@
       </div>
       <div class="relative z-10">
         <h1 class="text-3xl md:text-4xl font-bold mb-2">
-          <%= locale.dashboard.welcome || "Welcome to" %> Dashboard!
+          <%= locale.dashboard.welcome || "Welcome to" %> <%= guild ? guild.name : 'LR7' %> Dashboard!
         </h1>
         <p class="text-blue-100 mb-6 max-w-2xl">
           <%= locale.dashboard.welcomeMessage
             || "Manage your Discord bot, customize settings, and monitor statistics all from one place." %>
         </p>
 
-        <div class="flex flex-wrap gap-3 mt-2">
+        <% if (!user) { %>
+          <div class="mt-6">
+            <a href="/auth/login" class="inline-flex items-center px-6 py-3 bg-white text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-all transform hover:scale-105 shadow-lg">
+              <i class="fab fa-discord mr-2"></i> Login with Discord
+            </a>
+          </div>
+        <% } %>
+
+        <div class="flex flex-wrap gap-3 mt-6">
           <div class="flex items-center gap-2 bg-white/20 rounded-full px-4 py-1.5">
             <div class="h-2.5 w-2.5 rounded-full bg-green-400 animate-pulse"></div>
             <span class="text-sm font-medium">Bot Online</span>
@@ -142,99 +150,109 @@
           </a>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex justify-between items-center">
-            <div class="flex items-center">
-              <div
-                class="w-9 h-9 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400 mr-3">
-                <i class="fas fa-shield-alt"></i>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <% if (moduleStatus && moduleStatus.protection) { %>
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex justify-between items-center">
+              <div class="flex items-center">
+                <div
+                  class="w-9 h-9 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400 mr-3">
+                  <i class="fas fa-shield-alt"></i>
+                </div>
+                <div>
+                  <h3 class="font-medium text-gray-800 dark:text-white">Protection</h3>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    <%= moduleStatus.protection.activeRules %> active rules
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 class="font-medium text-gray-800 dark:text-white">Protection</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                  <%= moduleStatus.protection.activeRules %> active rules
-                </p>
+              <div class="<%= moduleStatus.protection.enabled ? 'text-green-500' : 'text-gray-400' %>">
+                <i class="fas <%= moduleStatus.protection.enabled ? 'fa-check-circle' : 'fa-times-circle' %>"></i>
               </div>
             </div>
-            <div class="<%= moduleStatus.protection.enabled ? 'text-green-500' : 'text-gray-400' %>">
-              <i class="fas <%= moduleStatus.protection.enabled ? 'fa-check-circle' : 'fa-times-circle' %>"></i>
-            </div>
-          </div>
+            <% } %>
 
-          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex justify-between items-center">
-            <div class="flex items-center">
-              <div
-                class="w-9 h-9 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center text-green-600 dark:text-green-400 mr-3">
-                <i class="fas fa-ticket-alt"></i>
+            <% if (moduleStatus && moduleStatus.tickets) { %>
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex justify-between items-center">
+              <div class="flex items-center">
+                <div
+                  class="w-9 h-9 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center text-green-600 dark:text-green-400 mr-3">
+                  <i class="fas fa-ticket-alt"></i>
+                </div>
+                <div>
+                  <h3 class="font-medium text-gray-800 dark:text-white">Tickets</h3>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    <%= moduleStatus.tickets.sections %> ticket types
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 class="font-medium text-gray-800 dark:text-white">Tickets</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                  <%= moduleStatus.tickets.sections %> ticket types
-                </p>
+              <div class="<%= moduleStatus.tickets.enabled ? 'text-green-500' : 'text-gray-400' %>">
+                <i class="fas <%= moduleStatus.tickets.enabled ? 'fa-check-circle' : 'fa-times-circle' %>"></i>
               </div>
             </div>
-            <div class="<%= moduleStatus.tickets.enabled ? 'text-green-500' : 'text-gray-400' %>">
-              <i class="fas <%= moduleStatus.tickets.enabled ? 'fa-check-circle' : 'fa-times-circle' %>"></i>
-            </div>
-          </div>
+            <% } %>
 
-          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex justify-between items-center">
-            <div class="flex items-center">
-              <div
-                class="w-9 h-9 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center text-purple-600 dark:text-purple-400 mr-3">
-                <i class="fas fa-clipboard-list"></i>
+            <% if (moduleStatus && moduleStatus.apply) { %>
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex justify-between items-center">
+              <div class="flex items-center">
+                <div
+                  class="w-9 h-9 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center text-purple-600 dark:text-purple-400 mr-3">
+                  <i class="fas fa-clipboard-list"></i>
+                </div>
+                <div>
+                  <h3 class="font-medium text-gray-800 dark:text-white">Applications</h3>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    <%= moduleStatus.apply.positions %> active positions
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 class="font-medium text-gray-800 dark:text-white">Applications</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                  <%= moduleStatus.apply.positions %> active positions
-                </p>
+              <div class="<%= moduleStatus.apply.enabled ? 'text-green-500' : 'text-gray-400' %>">
+                <i class="fas <%= moduleStatus.apply.enabled ? 'fa-check-circle' : 'fa-times-circle' %>"></i>
               </div>
             </div>
-            <div class="<%= moduleStatus.apply.enabled ? 'text-green-500' : 'text-gray-400' %>">
-              <i class="fas <%= moduleStatus.apply.enabled ? 'fa-check-circle' : 'fa-times-circle' %>"></i>
-            </div>
-          </div>
+            <% } %>
 
-          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex justify-between items-center">
-            <div class="flex items-center">
-              <div
-                class="w-9 h-9 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center text-amber-600 dark:text-amber-400 mr-3">
-                <i class="fas fa-gavel"></i>
+            <% if (moduleStatus && moduleStatus.rules) { %>
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex justify-between items-center">
+              <div class="flex items-center">
+                <div
+                  class="w-9 h-9 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center text-amber-600 dark:text-amber-400 mr-3">
+                  <i class="fas fa-gavel"></i>
+                </div>
+                <div>
+                  <h3 class="font-medium text-gray-800 dark:text-white">Rules</h3>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    <%= moduleStatus.rules.sections %> rule sections
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 class="font-medium text-gray-800 dark:text-white">Rules</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                  <%= moduleStatus.rules.sections %> rule sections
-                </p>
+              <div class="<%= moduleStatus.rules.enabled ? 'text-green-500' : 'text-gray-400' %>">
+                <i class="fas <%= moduleStatus.rules.enabled ? 'fa-check-circle' : 'fa-times-circle' %>"></i>
               </div>
             </div>
-            <div class="<%= moduleStatus.rules.enabled ? 'text-green-500' : 'text-gray-400' %>">
-              <i class="fas <%= moduleStatus.rules.enabled ? 'fa-check-circle' : 'fa-times-circle' %>"></i>
-            </div>
-          </div>
+            <% } %>
 
-          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex justify-between items-center">
-            <div class="flex items-center">
+            <% if (moduleStatus && moduleStatus.giveaway) { %>
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex justify-between items-center">
+              <div class="flex items-center">
+                <div
+                  class="w-9 h-9 bg-pink-100 dark:bg-pink-900/30 rounded-lg flex items-center justify-center text-pink-600 dark:text-pink-400 mr-3">
+                  <i class="fas fa-gift"></i>
+                </div>
+                <div>
+                  <h3 class="font-medium text-gray-800 dark:text-white">Giveaways</h3>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    <%= moduleStatus.giveaway.enabled ? 'Active' : 'Inactive' %>
+                  </p>
+                </div>
+              </div>
               <div
-                class="w-9 h-9 bg-pink-100 dark:bg-pink-900/30 rounded-lg flex items-center justify-center text-pink-600 dark:text-pink-400 mr-3">
-                <i class="fas fa-gift"></i>
-              </div>
-              <div>
-                <h3 class="font-medium text-gray-800 dark:text-white">Giveaways</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                  <%= moduleStatus.giveaway && moduleStatus.giveaway.enabled ? 'Active' : 'Inactive' %>
-                </p>
+                class="<%= moduleStatus.giveaway.enabled ? 'text-green-500' : 'text-gray-400' %>">
+                <i
+                  class="fas <%= moduleStatus.giveaway.enabled ? 'fa-check-circle' : 'fa-times-circle' %>"></i>
               </div>
             </div>
-            <div
-              class="<%= moduleStatus.giveaway && moduleStatus.giveaway.enabled ? 'text-green-500' : 'text-gray-400' %>">
-              <i
-                class="fas <%= moduleStatus.giveaway && moduleStatus.giveaway.enabled ? 'fa-check-circle' : 'fa-times-circle' %>"></i>
-            </div>
+            <% } %>
           </div>
-        </div>
       </div>
 
       <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">

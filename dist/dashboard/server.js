@@ -134,25 +134,34 @@ class Dashboard {
         res.locals.user = req.session.user;
         next();
     }
-    requireAdmin(req, res, next) {
+    async requireAdmin(req, res, next) {
         if (!req.session.user) {
             return res.redirect('/auth/login');
         }
         const guildId = req.params.guildId || req.query.guild || req.session.selectedGuild;
         if (!guildId) {
-            return res.status(400).send('No guild selected');
+            return res.redirect('/dashboard');
         }
         const guild = this.client.guilds.cache.get(guildId);
         if (!guild) {
-            return res.status(404).send('Guild not found');
+            return res.status(404).send('Guild not found or bot not in guild');
         }
-        const member = guild.members.cache.get(req.session.user.id);
-        if (!member || !member.permissions.has(discord_js_1.PermissionFlagsBits.Administrator)) {
-            return res.status(403).send('You must be an administrator of this server');
+        try {
+            let member = guild.members.cache.get(req.session.user.id);
+            if (!member) {
+                member = await guild.members.fetch(req.session.user.id).catch(() => null);
+            }
+            if (!member || !member.permissions.has(discord_js_1.PermissionFlagsBits.Administrator)) {
+                return res.status(403).send('You must be an administrator of this server');
+            }
+            res.locals.user = req.session.user;
+            res.locals.guild = guild;
+            next();
         }
-        res.locals.user = req.session.user;
-        res.locals.guild = guild;
-        next();
+        catch (error) {
+            console.error('Error in requireAdmin:', error);
+            res.status(500).send('Internal Server Error');
+        }
     }
     async fetchDiscordUser(accessToken) {
         const response = await fetch('https://discord.com/api/users/@me', {
@@ -171,19 +180,42 @@ class Dashboard {
         return await response.json();
     }
     routes() {
-        this.app.get('/', (req, res) => {
+        this.app.get('/', async (req, res) => {
             if (req.session.user) {
                 return res.redirect('/dashboard');
             }
             const currentLang = req.cookies?.preferredLanguage || 'en';
             const locale = this.getLocale(currentLang);
-            res.render('index', {
-                title: 'Home',
-                user: null,
-                currentLang,
-                locale,
-                path: '/'
-            });
+            
+            try {
+                const stats = await this.generateDashboardStats();
+                const moduleStatus = this.getModuleStatus();
+                const recentActivity = await this.getRecentActivity();
+                const trends = {
+                    servers: { percentage: 5, direction: 'up', period: 'week' },
+                    users: { percentage: 12, direction: 'up', period: 'month' },
+                    commands: { percentage: 8, direction: 'up', period: 'day' }
+                };
+
+                res.render('index', {
+                    title: 'Home',
+                    stats,
+                    trends,
+                    moduleStatus,
+                    recentActivity,
+                    settings: this.client.settings,
+                    client: this.client,
+                    config: config_1.default,
+                    path: '/',
+                    currentLang,
+                    locale,
+                    user: null,
+                    breadcrumbs: this.getBreadcrumbs('/')
+                });
+            } catch (error) {
+                console.error('Error rendering guest index:', error);
+                res.status(500).send('Internal Server Error');
+            }
         });
 
         this.app.get('/auth/login', (_req, res) => {
@@ -1191,7 +1223,7 @@ class Dashboard {
             }
         });
         this.app.get('/tempchannels', this.requireAdmin.bind(this), async (req, res) => {
-            const currentLang = _req.cookies?.preferredLanguage || 'en';
+            const currentLang = req.cookies?.preferredLanguage || 'en';
             const locale = this.getLocale(currentLang);
             try {
                 const guild = this.client.guilds.cache.get(config_1.default.mainGuildId);

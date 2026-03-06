@@ -199,7 +199,16 @@ class ModBot extends discord_js_1.Client {
             try {
                 console.log(`Started refreshing ${slashCommands.length} application (/) commands.`);
                 const rest = new discord_js_1.REST().setToken(config_1.default.token);
+                
+                // Global deployment
                 await rest.put(discord_js_1.Routes.applicationCommands(config_1.default.clientId), { body: slashCommands });
+                
+                // Guild-specific deployment for faster testing if MAIN_GUILD_ID is provided
+                if (config_1.default.mainGuildId && config_1.default.mainGuildId !== 'YOUR_MAIN_GUILD_ID_HERE') {
+                    await rest.put(discord_js_1.Routes.applicationGuildCommands(config_1.default.clientId, config_1.default.mainGuildId), { body: slashCommands });
+                    console.log(`Successfully reloaded commands for guild: ${config_1.default.mainGuildId}`);
+                }
+                
                 console.log('Successfully reloaded application (/) commands.');
             }
             catch (error) {
@@ -459,11 +468,13 @@ class ModBot extends discord_js_1.Client {
 
                 // Hardcoded prefix commands
                 if (commandName === 'rules') {
+                    if (!message.member.permissions.has(discord_js_1.PermissionFlagsBits.Administrator)) return;
                     const rules = this.settings.rules?.message || 'No rules configured.';
                     return message.channel.send({ content: `@everyone\n\n${rules}` });
                 }
 
                 if (commandName === 'announce') {
+                    if (!message.member.permissions.has(discord_js_1.PermissionFlagsBits.Administrator)) return;
                     const announcement = args.join(' ');
                     if (!announcement) return message.reply('Please provide a message to announce!');
                     
@@ -818,7 +829,11 @@ class ModBot extends discord_js_1.Client {
             });
             this.on(discord_js_1.Events.VoiceStateUpdate, tempChannelHandler_1.handleVoiceStateUpdate);
             await this.login(config_1.default.token);
-            console.log(`Logged in as ${this.user?.tag}`);
+            
+            this.once(discord_js_1.Events.ClientReady, (readyClient) => {
+                console.log(`✅ ${readyClient.user.tag} is online and ready!`);
+                console.log(`🌍 Serving ${readyClient.guilds.cache.size} servers and ${readyClient.users.cache.size} users.`);
+            });
             
             // Initialize auto lines
             initAutoLines(this);
