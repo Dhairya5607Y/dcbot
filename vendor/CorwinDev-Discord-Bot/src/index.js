@@ -40,6 +40,16 @@ const manager = new Discord.ShardingManager('./src/bot.js', {
     token: process.env.DISCORD_TOKEN,
     respawn: true
 });
+
+// Add a simple health check server for Render
+const http = require('http');
+const PORT = process.env.PORT || 10000;
+http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Bot is running\n');
+}).listen(PORT, '0.0.0.0', () => {
+    console.log(`Health check server running on port ${PORT}`);
+});
 if (process.env.TOPGG_TOKEN) {
     const { AutoPoster } = require('topgg-autoposter');
     AutoPoster(process.env.TOPGG_TOKEN, manager);

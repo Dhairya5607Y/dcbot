@@ -38,7 +38,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: API_PORT
-        value: "4000"
+        value: "10000"
       - key: DASHBOARD_URL
         sync: false
       - key: MONGO_URI
