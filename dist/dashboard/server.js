@@ -127,7 +127,161 @@ class Dashboard {
             next();
         });
     }
+    requireAuth(req, res, next) {
+        if (!req.session.user) {
+            return res.redirect('/auth/login');
+        }
+        res.locals.user = req.session.user;
+        next();
+    }
+    requireAdmin(req, res, next) {
+        if (!req.session.user) {
+            return res.redirect('/auth/login');
+        }
+        const guildId = req.params.guildId || req.query.guild || req.session.selectedGuild;
+        if (!guildId) {
+            return res.status(400).send('No guild selected');
+        }
+        const guild = this.client.guilds.cache.get(guildId);
+        if (!guild) {
+            return res.status(404).send('Guild not found');
+        }
+        const member = guild.members.cache.get(req.session.user.id);
+        if (!member || !member.permissions.has(discord_js_1.PermissionFlagsBits.Administrator)) {
+            return res.status(403).send('You must be an administrator of this server');
+        }
+        res.locals.user = req.session.user;
+        res.locals.guild = guild;
+        next();
+    }
+    async fetchDiscordUser(accessToken) {
+        const response = await fetch('https://discord.com/api/users/@me', {
+            headers: {
+                Authorization: `Bearer ${accessToken}`
+            }
+        });
+        return await response.json();
+    }
+    async fetchUserGuilds(accessToken) {
+        const response = await fetch('https://discord.com/api/users/@me/guilds', {
+            headers: {
+                Authorization: `Bearer ${accessToken}`
+            }
+        });
+        return await response.json();
+    }
     routes() {
+        this.app.get('/auth/login', (_req, res) => {
+            const redirectUri = encodeURIComponent(config_1.default.dashboard.callbackUrl);
+            const scope = encodeURIComponent('identify guilds');
+            const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${config_1.default.clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
+            res.redirect(authUrl);
+        });
+        this.app.get('/auth/callback', async (req, res) => {
+            const code = req.query.code;
+            if (!code) {
+                return res.redirect('/');
+            }
+            try {
+                const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        client_id: config_1.default.clientId,
+                        client_secret: config_1.default.dashboard.clientSecret,
+                        grant_type: 'authorization_code',
+                        code: code,
+                        redirect_uri: config_1.default.dashboard.callbackUrl
+                    })
+                });
+                const tokenData = await tokenResponse.json();
+                if (!tokenData.access_token) {
+                    console.error('OAuth error:', tokenData);
+                    return res.redirect('/');
+                }
+                const user = await this.fetchDiscordUser(tokenData.access_token);
+                const guilds = await this.fetchUserGuilds(tokenData.access_token);
+                const botGuilds = this.client.guilds.cache.map(g => g.id);
+                const mutualGuilds = guilds.filter(g => botGuilds.includes(g.id) && (parseInt(g.permissions) & 0x8) === 0x8);
+                req.session.user = {
+                    id: user.id,
+                    username: user.username,
+                    discriminator: user.discriminator,
+                    avatar: user.avatar,
+                    guilds: mutualGuilds
+                };
+                req.session.accessToken = tokenData.access_token;
+                if (mutualGuilds.length > 0) {
+                    req.session.selectedGuild = mutualGuilds[0].id;
+                }
+                res.redirect('/dashboard');
+            }
+            catch (error) {
+                console.error('OAuth callback error:', error);
+                res.redirect('/');
+            }
+        });
+        this.app.get('/auth/logout', (req, res) => {
+            req.session.destroy(() => {
+                res.redirect('/');
+            });
+        });
+        this.app.get('/dashboard', this.requireAuth.bind(this), async (req, res) => {
+            const currentLang = req.cookies?.preferredLanguage || 'en';
+            const locale = this.getLocale(currentLang);
+            try {
+                const userGuilds = req.session.user.guilds || [];
+                res.render('dashboard-select', {
+                    title: 'Select Server',
+                    user: req.session.user,
+                    guilds: userGuilds,
+                    currentLang,
+                    locale,
+                    path: '/dashboard'
+                });
+            }
+            catch (error) {
+                console.error('Error rendering dashboard:', error);
+                res.status(500).send('Internal Server Error');
+            }
+        });
+        this.app.get('/dashboard/:guildId', this.requireAdmin.bind(this), async (req, res) => {
+            const currentLang = req.cookies?.preferredLanguage || 'en';
+            const locale = this.getLocale(currentLang);
+            try {
+                req.session.selectedGuild = req.params.guildId;
+                const stats = await this.generateDashboardStats();
+                const moduleStatus = this.getModuleStatus();
+                const recentActivity = await this.getRecentActivity();
+                const trends = {
+                    servers: { percentage: 5, direction: 'up', period: 'week' },
+                    users: { percentage: 12, direction: 'up', period: 'month' },
+                    commands: { percentage: 8, direction: 'up', period: 'day' }
+                };
+                return res.render('index', {
+                    title: locale.dashboard.title,
+                    stats,
+                    trends,
+                    moduleStatus,
+                    recentActivity,
+                    settings: this.client.settings,
+                    client: this.client,
+                    config: config_1.default,
+                    path: `/dashboard/${req.params.guildId}`,
+                    currentLang,
+                    locale,
+                    user: req.session.user,
+                    guild: res.locals.guild,
+                    breadcrumbs: this.getBreadcrumbs(`/dashboard/${req.params.guildId}`)
+                });
+            }
+            catch (error) {
+                console.error('Error rendering guild dashboard:', error);
+                return res.status(500).send('Internal Server Error');
+            }
+        });
         this.app.get('/', async (_req, res) => {
             const currentLang = _req.cookies?.preferredLanguage || 'en';
             const locale = this.getLocale(currentLang);
@@ -152,6 +306,7 @@ class Dashboard {
                     path: '/',
                     currentLang,
                     locale,
+                    user: _req.session.user || null,
                     breadcrumbs: this.getBreadcrumbs('/')
                 });
             }

@@ -13,7 +13,9 @@ const config = {
     dashboard: {
         port: process.env.PORT || 3001,
         secret: process.env.DASHBOARD_SECRET || 'your-secret-key',
-        callbackUrl: process.env.CALLBACK_URL || 'http://localhost:3001/auth/callback'
+        callbackUrl: process.env.CALLBACK_URL || 'http://localhost:3001/auth/callback',
+        clientSecret: process.env.DISCORD_CLIENT_SECRET || 'YOUR_CLIENT_SECRET_HERE',
+        domain: process.env.DASHBOARD_DOMAIN || 'http://localhost:3001'
     }
 };
 function loadSettingsFile() {

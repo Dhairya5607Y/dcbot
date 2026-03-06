@@ -184,7 +184,7 @@ class ModBot extends discord_js_1.Client {
                     }
                 }
             }
-            await this.deployCommands(slashCommands);
+            this.deployCommands(slashCommands);
             this.on(discord_js_1.Events.InteractionCreate, async (interaction) => {
                 if (interaction.isButton()) {
                     if (interaction.customId.startsWith('apply_accept_') || interaction.customId.startsWith('apply_reject_')) {

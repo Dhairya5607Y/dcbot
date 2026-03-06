@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="<%= currentLang %>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - LR7 Community Bot</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .server-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .server-card {
+            background: #2f3136;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            color: #fff;
+        }
+        .server-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .server-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-bottom: 15px;
+            background: #5865f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .server-icon img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+        .server-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .user-info {
+            background: #2f3136;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px auto;
+            max-width: 400px;
+            text-align: center;
+        }
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+        .logout-btn {
+            background: #ed4245;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .logout-btn:hover {
+            background: #c03537;
+        }
+        .no-servers {
+            text-align: center;
+            padding: 40px;
+            color: #b9bbbe;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><%= title %></h1>
+        
+        <div class="user-info">
+            <% if (user.avatar) { %>
+                <img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" alt="<%= user.username %>" class="user-avatar">
+            <% } else { %>
+                <div class="user-avatar" style="background: #5865f2; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold;">
+                    <%= user.username.charAt(0).toUpperCase() %>
+                </div>
+            <% } %>
+            <p>Logged in as <strong><%= user.username %>#<%= user.discriminator %></strong></p>
+            <a href="/auth/logout" class="logout-btn">Logout</a>
+        </div>
+
+        <% if (guilds && guilds.length > 0) { %>
+            <div class="server-grid">
+                <% guilds.forEach(guild => { %>
+                    <a href="/dashboard/<%= guild.id %>" class="server-card">
+                        <div class="server-icon">
+                            <% if (guild.icon) { %>
+                                <img src="https://cdn.discordapp.com/icons/<%= guild.id %>/<%= guild.icon %>.png" alt="<%= guild.name %>">
+                            <% } else { %>
+                                <%= guild.name.charAt(0).toUpperCase() %>
+                            <% } %>
+                        </div>
+                        <div class="server-name"><%= guild.name %></div>
+                    </a>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <div class="no-servers">
+                <h2>No Servers Found</h2>
+                <p>You don't have administrator permissions in any servers where this bot is installed.</p>
+                <p>Make sure you have Administrator permissions and the bot is invited to your server.</p>
+            </div>
+        <% } %>
+    </div>
+</body>
+</html>
