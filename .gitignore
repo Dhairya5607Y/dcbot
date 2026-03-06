@@ -39,9 +39,12 @@ Thumbs.db
 *.sublime-workspace
 
 # Build
-dist/*/logs/
 build/
 out/
+
+# Runtime logs only (not source code logs)
+dist/*/logs/*.log
+dist/cache/
 
 # Testing
 coverage/
