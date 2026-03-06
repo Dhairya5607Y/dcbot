@@ -76,6 +76,16 @@ class Dashboard {
                 path: req.path,
                 currentLang: res.locals.currentLang || 'en',
                 title: 'Dashboard',
+                guild: null,
+                user: null,
+                stats: null,
+                moduleStatus: null,
+                recentActivity: [],
+                trends: {
+                    servers: { percentage: 0, direction: 'up', period: 'week' },
+                    users: { percentage: 0, direction: 'up', period: 'month' },
+                    commands: { percentage: 0, direction: 'up', period: 'day' }
+                },
                 renderPartial: (name) => {
                     try {
                         const partialPath = path_1.default.join(__dirname, 'views', 'partials', `${name}.ejs`);
@@ -210,6 +220,7 @@ class Dashboard {
                     currentLang,
                     locale,
                     user: null,
+                    guild: null,
                     breadcrumbs: this.getBreadcrumbs('/')
                 });
             } catch (error) {
@@ -331,20 +342,6 @@ class Dashboard {
                 console.error('Error rendering guild dashboard:', error);
                 res.status(500).send('Internal Server Error');
             }
-        });
-        this.app.get('/', (req, res) => {
-            if (req.session.user) {
-                return res.redirect('/dashboard');
-            }
-            const currentLang = req.cookies?.preferredLanguage || 'en';
-            const locale = this.getLocale(currentLang);
-            res.render('index', {
-                title: 'Home',
-                user: null,
-                currentLang,
-                locale,
-                path: '/'
-            });
         });
         this.app.get('/docs', (_req, res) => {
             try {

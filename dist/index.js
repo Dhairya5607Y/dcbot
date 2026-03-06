@@ -127,6 +127,7 @@ class ModBot extends discord_js_1.Client {
         this.aliases = new discord_js_1.Collection();
         this.locales = new discord_js_1.Collection();
         this.snipes = new discord_js_1.Collection();
+        this.commandStats = {};
         const settingsPath = (0, path_1.join)(__dirname, '../settings.json');
         this.settings = JSON.parse((0, fs_1.readFileSync)(settingsPath, 'utf-8'));
         this.defaultLanguage = this.settings.defaultLanguage || 'en';
@@ -398,6 +399,7 @@ class ModBot extends discord_js_1.Client {
                     return;
                 }
                 try {
+                    this.commandStats[interaction.commandName] = (this.commandStats[interaction.commandName] || 0) + 1;
                     await command.command.execute(interaction, [], this);
                 }
                 catch (error) {
@@ -469,12 +471,14 @@ class ModBot extends discord_js_1.Client {
                 // Hardcoded prefix commands
                 if (commandName === 'rules') {
                     if (!message.member.permissions.has(discord_js_1.PermissionFlagsBits.Administrator)) return;
+                    this.commandStats['rules'] = (this.commandStats['rules'] || 0) + 1;
                     const rules = this.settings.rules?.message || 'No rules configured.';
                     return message.channel.send({ content: `@everyone\n\n${rules}` });
                 }
 
                 if (commandName === 'announce') {
                     if (!message.member.permissions.has(discord_js_1.PermissionFlagsBits.Administrator)) return;
+                    this.commandStats['announce'] = (this.commandStats['announce'] || 0) + 1;
                     const announcement = args.join(' ');
                     if (!announcement) return message.reply('Please provide a message to announce!');
                     
@@ -510,6 +514,7 @@ class ModBot extends discord_js_1.Client {
                             console.error('Error fetching member:', error);
                         }
                     }
+                    this.commandStats[command.command.name] = (this.commandStats[command.command.name] || 0) + 1;
                     await command.command.execute(message, args, this);
                 }
                 catch (error) {
