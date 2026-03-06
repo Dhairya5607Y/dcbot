@@ -95,6 +95,7 @@ const { handleAIModeration } = require('./src/aiMod/aiHandler');
 const { initAutoLines } = require('./src/autoLines/autoLinesHandler');
 const { handleSelectRoles } = require('./src/selectRoles/selectRolesHandler');
 const { IntegrationManager } = require('./src/integrations/integrationManager');
+const server_1 = require("./dashboard/server");
 
 class ModBot extends discord_js_1.Client {
     constructor() {
