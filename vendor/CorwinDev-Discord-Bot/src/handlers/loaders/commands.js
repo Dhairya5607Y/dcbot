@@ -39,10 +39,12 @@ module.exports = (client) => {
                 embeds: [embed]
             });
 
+            console.log(chalk.blue(chalk.bold(`System`)), (chalk.white(`>>`)), (chalk.green(`Started refreshing application (/) commands`)));
             await rest.put(
-                Routes.applicationCommands(client.config.discord.id),
+                Routes.applicationCommands(process.env.DISCORD_ID || client.user.id),
                 { body: commands },
             )
+            console.log(chalk.blue(chalk.bold(`System`)), (chalk.white(`>>`)), (chalk.green(`Successfully reloaded ${commands.length} application (/) commands`)));
 
             const embedFinal = new Discord.EmbedBuilder()
                 .setDescription(`Successfully reloaded ${commands.length} application (/) commands.`)
