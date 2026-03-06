@@ -59,7 +59,8 @@ const shardLogs = (webhook.shardLogs.id && webhook.shardLogs.token) ? new Discor
 const manager = new Discord.ShardingManager('./src/bot.js', {
     totalShards: process.env.NODE_ENV === 'production' ? 1 : 'auto',
     token: process.env.DISCORD_TOKEN,
-    respawn: true
+    respawn: true,
+    timeout: 90000 // Increase timeout to 90 seconds for Render's slow startup
 });
 
 // Add a simple health check server for Render
