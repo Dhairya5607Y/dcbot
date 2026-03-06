@@ -431,24 +431,13 @@ class Dashboard {
             const currentLang = req.cookies?.preferredLanguage || 'en';
             const locale = this.getLocale(currentLang);
             const categories = [
-                {
-                    id: 'general',
-                    name: locale.dashboard.commands.general,
-                    icon: 'users',
-                    color: 'blue'
-                },
-                {
-                    id: 'moderation',
-                    name: locale.dashboard.commands.moderation,
-                    icon: 'shield-alt',
-                    color: 'purple'
-                },
-                {
-                    id: 'utility',
-                    name: locale.dashboard.commands.utility || 'Utility',
-                    icon: 'tools',
-                    color: 'green'
-                }
+                { id: 'general', name: locale.dashboard.commands.general, icon: 'users', color: 'blue' },
+                { id: 'admin', name: locale.dashboard.commands.moderation, icon: 'shield-alt', color: 'purple' },
+                { id: 'utility', name: locale.dashboard.commands.utility || 'Utility', icon: 'tools', color: 'green' },
+                { id: 'economy', name: 'Economy', icon: 'coins', color: 'amber' },
+                { id: 'fun', name: 'Fun', icon: 'gamepad', color: 'pink' },
+                { id: 'social', name: 'Social', icon: 'heart', color: 'red' },
+                { id: 'voice', name: 'Voice', icon: 'microphone', color: 'indigo' }
             ];
             res.render('command-categories', {
                 title: locale.dashboard.commands.title,
@@ -460,6 +449,52 @@ class Dashboard {
                 guild: res.locals.guild,
                 breadcrumbs: this.getBreadcrumbs('/commands')
             });
+        });
+        this.app.get('/commands/:category', this.requireAdmin.bind(this), (req, res) => {
+            const category = req.params.category;
+            const currentLang = req.cookies?.preferredLanguage || 'en';
+            const locale = this.getLocale(currentLang);
+            const basePath = (0, path_2.join)(__dirname, '../src/commands', category);
+            try {
+                if (!require('fs').existsSync(basePath) || !require('fs').statSync(basePath).isDirectory()) {
+                    return res.status(404).render('error', {
+                        title: '404 - Not Found',
+                        error: { code: 404, message: 'Category not found' }
+                    });
+                }
+                const files = require('fs').readdirSync(basePath).filter((f) => f.endsWith('.js'));
+                const commands = files.map((f) => {
+                    const name = f.replace(/\.js$/, '');
+                    const settings = this.client.settings.commands[name] || {};
+                    return {
+                        name,
+                        description: res.locals.locale.dashboard.commandDescriptions?.[name] || `${name} command`,
+                        enabled: settings.enabled ?? false,
+                        aliases: settings.aliases ?? [],
+                        cooldown: settings.cooldown ?? 5
+                    };
+                });
+                res.render('commands', {
+                    title: locale.dashboard.commands[category] || (category.charAt(0).toUpperCase() + category.slice(1)),
+                    page: category,
+                    commands,
+                    user: req.session.user,
+                    guild: res.locals.guild,
+                    roles: this.client.guilds.cache.first()?.roles.cache.map(role => ({
+                        id: role.id,
+                        name: role.name
+                    })) ?? []
+                });
+            } catch (error) {
+                console.error('Error rendering dynamic commands page:', error);
+                return res.status(500).render('error', {
+                    title: 'Error',
+                    error: { code: 500, message: 'Internal Server Error' },
+                    currentLang,
+                    locale,
+                    path: `/commands/${category}`
+                });
+            }
         });
         this.app.get('/commands/general', this.requireAdmin.bind(this), (req, res) => {
             const generalCommands = ['avatar', 'banner', 'ping', 'roles', 'server', 'user'].map(cmd => ({
@@ -1995,22 +2030,30 @@ class Dashboard {
             try {
                 const settingsPath = (0, path_2.join)(process.cwd(), 'settings.json');
                 const currentSettings = JSON.parse((0, fs_1.readFileSync)(settingsPath, 'utf8'));
-                const allCommands = Object.entries(currentSettings.commands).map(([name, data]) => {
-                    const commandData = data;
-                    return {
-                        name,
-                        enabled: commandData.enabled || false,
-                        aliases: commandData.aliases || [],
-                        cooldown: commandData.cooldown || 5,
-                        permissions: commandData.permissions || { enabledRoleIds: [], disabledRoleIds: [] }
-                    };
-                });
-                const generalCommands = ['avatar', 'banner', 'ping', 'roles', 'server', 'user'];
-                const moderationCommands = ['ban', 'kick', 'mute', 'unmute', 'warn', 'unwarn', 'clear', 'lock', 'unlock', 'hide', 'unhide', 'move', 'timeout', 'rtimeout'];
+                const allCommands = Object.entries(currentSettings.commands).map(([name, data]) => ({
+                    name,
+                    enabled: data.enabled || false,
+                    aliases: data.aliases || [],
+                    cooldown: data.cooldown || 5,
+                    permissions: data.permissions || { enabledRoleIds: [], disabledRoleIds: [] }
+                }));
+                const baseDir = (0, path_2.join)(__dirname, '../src/commands');
+                const fsLocal = require('fs');
+                const readCategory = (cat) => {
+                    const dir = (0, path_2.join)(baseDir, cat);
+                    if (!fsLocal.existsSync(dir) || !fsLocal.statSync(dir).isDirectory()) return [];
+                    const files = fsLocal.readdirSync(dir).filter((f) => f.endsWith('.js'));
+                    const names = files.map((f) => f.replace(/\.js$/, ''));
+                    return allCommands.filter((cmd) => names.includes(cmd.name));
+                };
                 const categories = {
-                    general: allCommands.filter(cmd => generalCommands.includes(cmd.name)),
-                    moderation: allCommands.filter(cmd => moderationCommands.includes(cmd.name)),
-                    utility: allCommands.filter(cmd => !generalCommands.includes(cmd.name) && !moderationCommands.includes(cmd.name))
+                    general: readCategory('general'),
+                    admin: readCategory('admin'),
+                    utility: readCategory('utility'),
+                    economy: readCategory('economy'),
+                    fun: readCategory('fun'),
+                    social: readCategory('social'),
+                    voice: readCategory('voice')
                 };
                 return res.json({
                     success: true,

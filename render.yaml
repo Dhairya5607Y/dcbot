@@ -1,27 +1,67 @@
 services:
-  - type: web
-    name: lr7-community-bot
+  - type: worker
+    name: lr7-bot-corwindev
     env: node
     region: oregon
     plan: free
-    buildCommand: npm install
-    startCommand: node index.js
+    buildCommand: cd vendor/CorwinDev-Discord-Bot && npm install
+    startCommand: cd vendor/CorwinDev-Discord-Bot && npm start
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3001
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: MONGO_URI
+        sync: false
+      - key: SPOTIFY_CLIENT_ID
+        sync: false
+      - key: SPOTIFY_CLIENT_SECRET
+        sync: false
+      - key: LAVALINK_HOST
+        sync: false
+      - key: LAVALINK_PORT
+        value: "80"
+      - key: LAVALINK_PASSWORD
+        value: CorwinDev
+      - key: LAVALINK_SECURE
+        value: "false"
+  - type: web
+    name: lr7-api
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: cd vendor/VantyxBot/api && npm install
+    startCommand: cd vendor/VantyxBot/api && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: API_PORT
+        value: "4000"
+      - key: DASHBOARD_URL
+        sync: false
+      - key: MONGO_URI
+        sync: false
       - key: DISCORD_TOKEN
         sync: false
       - key: CLIENT_ID
         sync: false
-      - key: MONGO_URI
+      - key: CLIENT_SECRET
         sync: false
-      - key: OWNER_ID
+  - type: web
+    name: lr7-dashboard
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: cd vendor/VantyxBot/dashboard && npm install && npm run build
+    startCommand: cd vendor/VantyxBot/dashboard && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DASHBOARD_URL
         sync: false
-      - key: MAIN_GUILD_ID
+      - key: API_URL
         sync: false
-      - key: DASHBOARD_SECRET
-        generateValue: true
-      - key: CALLBACK_URL
-        value: https://lr7-community-bot.onrender.com/auth/callback
+      - key: API_PORT
+        value: "443"
+      - key: PROJECT_VERSION
+        value: "1.0"
