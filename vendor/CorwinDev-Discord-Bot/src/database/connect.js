@@ -5,7 +5,11 @@ async function connect() {
     mongoose.set('strictQuery', false);
     try {
         console.log(chalk.blue(chalk.bold(`Database`)), (chalk.white(`>>`)), chalk.red(`MongoDB`), chalk.green(`is connecting...`))
-        await mongoose.connect(process.env.MONGO_TOKEN, {
+        const connectionString = process.env.MONGO_URI || process.env.MONGO_TOKEN;
+        if (!connectionString) {
+            throw new Error("No MongoDB connection string provided in environment variables (MONGO_URI or MONGO_TOKEN)");
+        }
+        await mongoose.connect(connectionString, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         });
