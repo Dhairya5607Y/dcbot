@@ -10,7 +10,7 @@ if (!process.argv[2]) {
     console.log(chalk.red(`[ERROR]`), chalk.white(`>>`), chalk.red(`Developer Badge`), chalk.white(`>>`), chalk.red(`Please provide a member id!`))
     process.exit(1);
 }
-require('dotenv').config('./.env');
+require('dotenv').config();
 // Require database
 const mongoose = require('mongoose');
 // Require the model
