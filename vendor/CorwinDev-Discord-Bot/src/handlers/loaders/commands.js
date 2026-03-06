@@ -5,10 +5,10 @@ const chalk = require('chalk');
 const fs = require('fs');
 
 module.exports = (client) => {
-    const interactionLogs = new Discord.WebhookClient({
+    const interactionLogs = (client.webhooks.interactionLogs.id && client.webhooks.interactionLogs.token) ? new Discord.WebhookClient({
         id: client.webhooks.interactionLogs.id,
         token: client.webhooks.interactionLogs.token,
-    });
+    }) : { send: () => Promise.resolve() };
 
     const commands = [];
 
