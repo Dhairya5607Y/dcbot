@@ -124,6 +124,14 @@ client.wait = require("util").promisify(setTimeout);
     // Initialize background cron jobs and tasks
     startSchedulers(client);
 
+    // --- Dummy HTTP Server for Render ---
+    const http = require('http');
+    const port = process.env.PORT || 8080;
+    http.createServer((req, res) => {
+      res.writeHead(200);
+      res.end('VantyxBot is running!');
+    }).listen(port, () => logger.info(`Render port bind successful on port ${port}`));
+
     // Authenticate with Discord
     await client.login(config.DISCORD_TOKEN);
   } catch (err) {
