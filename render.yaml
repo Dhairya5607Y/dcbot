@@ -1,11 +1,11 @@
 services:
   - type: web
-    name: lr7-bot-corwindev
+    name: lr7-bot-unified
     env: node
     region: oregon
     plan: free
-    buildCommand: cd vendor/CorwinDev-Discord-Bot && npm install
-    startCommand: cd vendor/CorwinDev-Discord-Bot && npm start
+    buildCommand: cd vendor/VantyxBot/bot && npm install
+    startCommand: cd vendor/VantyxBot/bot && npm start
     envVars:
       - key: PORT
         value: "10000"
@@ -13,20 +13,26 @@ services:
         value: production
       - key: DISCORD_TOKEN
         sync: false
+      - key: CLIENT_ID
+        sync: false
+      - key: CLIENT_SECRET
+        sync: false
+      - key: OWNER_IDS
+        sync: false
+      - key: MAIN_GUILD_ID
+        sync: false
       - key: MONGO_URI
         sync: false
-      - key: SPOTIFY_CLIENT_ID
+      - key: DASHBOARD_URL
         sync: false
-      - key: SPOTIFY_CLIENT_SECRET
+      - key: API_URL
         sync: false
-      - key: LAVALINK_HOST
+      - key: API_PORT
+        value: "443"
+      - key: OWNER_IDS
         sync: false
-      - key: LAVALINK_PORT
-        value: "80"
-      - key: LAVALINK_PASSWORD
-        value: CorwinDev
-      - key: LAVALINK_SECURE
-        value: "false"
+      - key: MAIN_GUILD_ID
+        sync: false
   - type: web
     name: lr7-api
     env: node

@@ -65,6 +65,31 @@ module.exports = {
       const command = client.commands.get(interaction.commandName);
       if (!command) return;
 
+      // --- Handle All-In-One commands ---
+      if (command.isAIO) {
+        // Defer reply for AIO commands based on their configuration
+        if (command.slashCommand?.ephemeral) {
+          await interaction.deferReply({ flags: MessageFlags.Ephemeral }).catch(() => {});
+        } else {
+          await interaction.deferReply().catch(() => {});
+        }
+
+        try {
+          // Fetch AIO settings for this guild
+          const { getSettings } = require("@schemas/Guild");
+          const settings = await getSettings(interaction.guild);
+          const data = { settings };
+
+          // AIO commands use interactionRun(interaction, data)
+          return await command.interactionRun(interaction, data);
+        } catch (error) {
+          logger.error(`AIO Command Error (${interaction.commandName}): ${error.message}`);
+          return interaction.editReply({
+            content: "An error occurred while executing this command.",
+          }).catch(() => {});
+        }
+      }
+
       // Defer reply immediately for all standard commands to prevent 3s timeout
       await interaction
         .deferReply({

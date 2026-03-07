@@ -26,6 +26,31 @@ module.exports = async (client) => {
     }
   }
 
+  // --- Load All-In-One commands for registration ---
+  const aioPath = path.join(__dirname, "../../../../All-In-One-Bot/src/commands");
+  if (fs.existsSync(aioPath)) {
+    const aioFolders = fs.readdirSync(aioPath);
+    for (const folder of aioFolders) {
+      const folderPath = path.join(aioPath, folder);
+      if (!fs.lstatSync(folderPath).isDirectory()) continue;
+
+      const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith(".js"));
+      for (const file of commandFiles) {
+        try {
+          const command = require(path.join(folderPath, file));
+          if (command.name && command.slashCommand?.enabled) {
+            commands.push({
+              name: command.name,
+              description: command.description || "No description",
+              options: command.slashCommand.options || [],
+              type: 1 // ChatInput
+            });
+          }
+        } catch (e) { /* skip */ }
+      }
+    }
+  }
+
   // Deploy commands
   const rest = new REST({ version: "10" }).setToken(
     client.config.DISCORD_TOKEN

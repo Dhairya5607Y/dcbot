@@ -42,8 +42,41 @@ module.exports = async (client) => {
     }
   }
 
+  // --- Load All-In-One commands ---
+  const aioPath = path.join(__dirname, "../../../../All-In-One-Bot/src/commands");
+  if (fs.existsSync(aioPath)) {
+    const aioFolders = fs.readdirSync(aioPath);
+    for (const folder of aioFolders) {
+      const folderPath = path.join(aioPath, folder);
+      if (!fs.lstatSync(folderPath).isDirectory()) continue;
+
+      const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith(".js"));
+      for (const file of commandFiles) {
+        try {
+          const command = require(path.join(folderPath, file));
+          if (command.name && (command.interactionRun || command.messageRun)) {
+            command.category = folder;
+            command.isAIO = true; // Flag for special handling in interactionCreate
+            client.commands.set(command.name, command);
+            logger.info(`Loaded AIO command: ${command.name}`);
+          }
+        } catch (e) {
+          logger.warn(`Failed to load AIO command at ${file}: ${e.message}`);
+        }
+      }
+    }
+  }
+
   // Map commands to a clean format for database synchronization
   const commandsList = client.commands.map((cmd) => {
+    if (cmd.isAIO) {
+      return {
+        name: cmd.name,
+        description: cmd.description || "No description",
+        category: cmd.category || "AIO",
+        options: (cmd.slashCommand?.options || []).map(opt => cleanOption(opt))
+      };
+    }
     const data = cmd.data.toJSON ? cmd.data.toJSON() : cmd.data;
 
     return {
