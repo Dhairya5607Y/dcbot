@@ -58,6 +58,14 @@ module.exports = async (client) => {
             command.category = folder;
             command.isAIO = true; // Flag for special handling in interactionCreate
             client.commands.set(command.name, command);
+            
+            // Handle AIO aliases
+            if (Array.isArray(command.command?.aliases)) {
+              command.command.aliases.forEach((alias) => {
+                client.commands.set(alias.toLowerCase(), command);
+              });
+            }
+
             logger.info(`Loaded AIO command: ${command.name}`);
           }
         } catch (e) {

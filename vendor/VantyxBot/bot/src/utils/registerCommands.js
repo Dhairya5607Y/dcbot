@@ -26,7 +26,7 @@ module.exports = async (client) => {
     }
   }
 
-  // --- Load All-In-One commands for registration ---
+  // --- Load AIO commands for registration (up to 100 limit) ---
   const aioPath = path.join(__dirname, "../../../../All-In-One-Bot/src/commands");
   if (fs.existsSync(aioPath)) {
     const aioFolders = fs.readdirSync(aioPath);
@@ -36,18 +36,22 @@ module.exports = async (client) => {
 
       const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith(".js"));
       for (const file of commandFiles) {
+        // Stop if we reach Discord's global limit of 100 slash commands
+        if (commands.length >= 100) break;
+
         try {
           const command = require(path.join(folderPath, file));
           if (command.name && command.slashCommand?.enabled) {
             commands.push({
               name: command.name,
-              description: command.description || "No description",
+              description: (command.description || "No description").substring(0, 100),
               options: command.slashCommand.options || [],
               type: 1 // ChatInput
             });
           }
         } catch (e) { /* skip */ }
       }
+      if (commands.length >= 100) break;
     }
   }
 
