@@ -56,6 +56,8 @@ client.logger = logger;
 
 // Attach commands collection and config to the client for easy access
 client.commands = new Collection();
+client.slashCommands = client.commands; // Bridge for AIO
+client.contextMenus = new Collection(); // Placeholder for AIO context menus
 client.getCommand = (invoke) => client.commands.get(invoke.toLowerCase());
 
 // --- Initialize All-In-One Features ---
@@ -86,6 +88,18 @@ client.wait = require("util").promisify(setTimeout);
     // Load Vantyx handlers
     require("./src/handlers/commandHandler")(client);
     require("./src/handlers/eventHandler")(client);
+
+    // --- Load All-In-One Contexts ---
+    const aioContextsPath = path.join(__dirname, "../../All-In-One-Bot/src/contexts");
+    if (fs.existsSync(aioContextsPath)) {
+      const { recursiveReadDirSync } = require("../../All-In-One-Bot/src/helpers/Utils");
+      recursiveReadDirSync(aioContextsPath).forEach((filePath) => {
+        const context = require(filePath);
+        if (context.name) {
+          client.contextMenus.set(context.name, context);
+        }
+      });
+    }
 
     // --- Load All-In-One Events ---
     const { recursiveReadDirSync } = require("../../All-In-One-Bot/src/helpers/Utils");

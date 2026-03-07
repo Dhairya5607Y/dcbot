@@ -45,25 +45,7 @@ module.exports = {
       const isHandledByResponder = await handleAutoResponder(message, settings);
       if (isHandledByResponder) return;
 
-      // 5. Handle Prefix Commands (All-In-One integration)
-      const prefix = settings.prefix || "!";
-      if (message.content.startsWith(prefix)) {
-        const args = message.content.slice(prefix.length).trim().split(/\s+/);
-        const commandName = args.shift().toLowerCase();
-        const command = message.client.commands.get(commandName);
-
-        if (command && command.isAIO && command.command?.enabled) {
-          // All-In-One commands expect (message, args, data) in messageRun
-          try {
-            const data = { settings };
-            return await command.messageRun(message, args, data);
-          } catch (err) {
-            logger.error(`Prefix Command Error (${commandName}): ${err.message}`);
-          }
-        }
-      }
-
-      // 6. Process Leveling (XP Gain)
+      // 5. Process Leveling (XP Gain)
       const levelUpData = await handleXpGain(message, settings);
       if (levelUpData?.leveledUp) {
         await handleLevelUp(message.client, message, levelUpData);
