@@ -1,6 +1,6 @@
 const { COLORS } = require("@src/data.json");
 const { readdirSync, lstatSync } = require("fs");
-const { join, extname } = require("path");
+const { join, extname, isAbsolute } = require("path");
 const permissions = require("./permissions");
 
 module.exports = class Utils {
@@ -116,16 +116,17 @@ module.exports = class Utils {
    */
   static recursiveReadDirSync(dir, allowedExtensions = [".js"]) {
     const filePaths = [];
-    const readCommands = (dir) => {
-      const files = readdirSync(join(process.cwd(), dir));
+    const readCommands = (currentDir) => {
+      const targetDir = isAbsolute(currentDir) ? currentDir : join(process.cwd(), currentDir);
+      const files = readdirSync(targetDir);
       files.forEach((file) => {
-        const stat = lstatSync(join(process.cwd(), dir, file));
+        const filePath = join(targetDir, file);
+        const stat = lstatSync(filePath);
         if (stat.isDirectory()) {
-          readCommands(join(dir, file));
+          readCommands(filePath);
         } else {
           const extension = extname(file);
           if (!allowedExtensions.includes(extension)) return;
-          const filePath = join(process.cwd(), dir, file);
           filePaths.push(filePath);
         }
       });
