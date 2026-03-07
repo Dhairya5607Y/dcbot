@@ -7,7 +7,7 @@ module.exports = async (client) => {
   const commands = [];
   
   // --- 1. Load AIO commands for registration FIRST (as requested by user) ---
-  const aioPath = path.join(__dirname, "../../../../All-In-One-Bot/src/commands");
+  const aioPath = path.join(__dirname, "../../../../../All-In-One-Bot/src/commands");
   if (fs.existsSync(aioPath)) {
     const aioFolders = fs.readdirSync(aioPath);
     for (const folder of aioFolders) {
@@ -35,7 +35,7 @@ module.exports = async (client) => {
   }
 
   // --- 2. Load AIO contexts for registration ---
-  const aioContextsPath = path.join(__dirname, "../../../../All-In-One-Bot/src/contexts");
+  const aioContextsPath = path.join(__dirname, "../../../../../All-In-One-Bot/src/contexts");
   if (fs.existsSync(aioContextsPath)) {
     const contextFiles = fs.readdirSync(aioContextsPath).filter(file => file.endsWith(".js"));
     for (const file of contextFiles) {

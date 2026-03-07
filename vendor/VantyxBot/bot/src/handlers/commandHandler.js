@@ -9,7 +9,7 @@ const GlobalCommands = require("../database/models/GlobalCommands");
  */
 module.exports = async (client) => {
   // --- 1. Load AIO commands FIRST (as requested by user) ---
-  const aioPath = path.join(__dirname, "../../../../All-In-One-Bot/src/commands");
+  const aioPath = path.join(__dirname, "../../../../../All-In-One-Bot/src/commands");
   if (fs.existsSync(aioPath)) {
     const aioFolders = fs.readdirSync(aioPath);
     for (const folder of aioFolders) {
