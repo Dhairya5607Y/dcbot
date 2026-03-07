@@ -8,41 +8,7 @@ const GlobalCommands = require("../database/models/GlobalCommands");
  * Also synchronizes the command list with the database for the dashboard.
  */
 module.exports = async (client) => {
-  const commandsPath = path.join(__dirname, "../commands");
-
-  if (!fs.existsSync(commandsPath)) {
-    logger.warn("Commands directory not found.");
-    return;
-  }
-
-  const commandFolders = fs.readdirSync(commandsPath);
-
-  for (const folder of commandFolders) {
-    const folderPath = path.join(commandsPath, folder);
-    if (!fs.lstatSync(folderPath).isDirectory()) continue;
-
-    const commandFiles = fs
-      .readdirSync(folderPath)
-      .filter((file) => file.endsWith(".js"));
-
-    for (const file of commandFiles) {
-      const filePath = path.join(folderPath, file);
-      const command = require(filePath);
-
-      // Verify command structure before loading
-      if ("data" in command && "execute" in command) {
-        command.category = folder;
-        client.commands.set(command.data.name, command);
-        logger.info(`Loaded command: ${command.data.name}`);
-      } else {
-        logger.warn(
-          `Missing required "data" or "execute" property at ${filePath}`,
-        );
-      }
-    }
-  }
-
-  // --- Load All-In-One commands ---
+  // --- 1. Load AIO commands FIRST (as requested by user) ---
   const aioPath = path.join(__dirname, "../../../../All-In-One-Bot/src/commands");
   if (fs.existsSync(aioPath)) {
     const aioFolders = fs.readdirSync(aioPath);
@@ -56,7 +22,7 @@ module.exports = async (client) => {
           const command = require(path.join(folderPath, file));
           if (command.name && (command.interactionRun || command.messageRun)) {
             command.category = folder;
-            command.isAIO = true; // Flag for special handling in interactionCreate
+            command.isAIO = true; // Flag for special handling
             client.commands.set(command.name, command);
             
             // Handle AIO aliases
@@ -74,6 +40,34 @@ module.exports = async (client) => {
       }
     }
   }
+
+  // --- 2. Load Vantyx commands ONLY if they don't collide (Disabled by user request) ---
+  /*
+  const commandsPath = path.join(__dirname, "../commands");
+  if (fs.existsSync(commandsPath)) {
+    const commandFolders = fs.readdirSync(commandsPath);
+    for (const folder of commandFolders) {
+      const folderPath = path.join(commandsPath, folder);
+      if (!fs.lstatSync(folderPath).isDirectory()) continue;
+
+      const commandFiles = fs.readdirSync(folderPath).filter((file) => file.endsWith(".js"));
+      for (const file of commandFiles) {
+        const filePath = path.join(folderPath, file);
+        const command = require(filePath);
+
+        if ("data" in command && "execute" in command) {
+          if (!client.commands.has(command.data.name)) {
+            command.category = folder;
+            client.commands.set(command.data.name, command);
+            logger.info(`Loaded Vantyx command: ${command.data.name}`);
+          } else {
+            logger.info(`Skipping Vantyx command ${command.data.name} (Collides with AIO)`);
+          }
+        }
+      }
+    }
+  }
+  */
 
   // Map commands to a clean format for database synchronization
   const commandsList = client.commands.map((cmd) => {

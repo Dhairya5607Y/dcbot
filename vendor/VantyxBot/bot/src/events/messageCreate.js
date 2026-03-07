@@ -22,14 +22,7 @@ module.exports = {
     if (message.author.bot || !message.guild) return;
 
     try {
-      // 1. Update Guild Statistics
-      await recordGuildStat(
-        message.guild,
-        "messages",
-        message.guild.memberCount,
-      );
-
-      // 2. Load Guild Settings
+      // 1. Load Guild Settings
       let settings = getCachedGuild(message.guild.id);
       if (!settings) {
         settings = await Guild.findById(message.guild.id).lean();
@@ -37,15 +30,11 @@ module.exports = {
       }
       if (!settings) return;
 
-      // 3. Process Auto-Moderation (Bypass for Admins)
-      const isHandledByAutoMod = await handleAutoModeration(message, settings);
-      if (isHandledByAutoMod) return;
-
-      // 4. Process Auto-Responder
+      // 2. Process Auto-Responder
       const isHandledByResponder = await handleAutoResponder(message, settings);
       if (isHandledByResponder) return;
 
-      // 5. Process Leveling (XP Gain)
+      // 3. Process Leveling (XP Gain)
       const levelUpData = await handleXpGain(message, settings);
       if (levelUpData?.leveledUp) {
         await handleLevelUp(message.client, message, levelUpData);

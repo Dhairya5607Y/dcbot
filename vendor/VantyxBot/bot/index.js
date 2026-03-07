@@ -4,6 +4,7 @@ const {
   Partials,
   Collection,
 } = require("discord.js");
+const fs = require("fs");
 const path = require("path");
 const moduleAlias = require("module-alias");
 
@@ -59,6 +60,10 @@ client.commands = new Collection();
 client.slashCommands = client.commands; // Bridge for AIO
 client.contextMenus = new Collection(); // Placeholder for AIO context menus
 client.getCommand = (invoke) => client.commands.get(invoke.toLowerCase());
+client.registerInteractions = async () => {
+  // Dummy function to prevent AIO's ready.js from registering interactions
+  // as we handle it manually in registerCommands.js
+};
 
 // --- Initialize All-In-One Features ---
 const aioConfig = require("../../All-In-One-Bot/config");
@@ -89,10 +94,11 @@ client.wait = require("util").promisify(setTimeout);
     require("./src/handlers/commandHandler")(client);
     require("./src/handlers/eventHandler")(client);
 
+    const { recursiveReadDirSync } = require("../../All-In-One-Bot/src/helpers/Utils");
+
     // --- Load All-In-One Contexts ---
     const aioContextsPath = path.join(__dirname, "../../All-In-One-Bot/src/contexts");
     if (fs.existsSync(aioContextsPath)) {
-      const { recursiveReadDirSync } = require("../../All-In-One-Bot/src/helpers/Utils");
       recursiveReadDirSync(aioContextsPath).forEach((filePath) => {
         const context = require(filePath);
         if (context.name) {
@@ -102,7 +108,6 @@ client.wait = require("util").promisify(setTimeout);
     }
 
     // --- Load All-In-One Events ---
-    const { recursiveReadDirSync } = require("../../All-In-One-Bot/src/helpers/Utils");
     const aioEventsPath = path.join(__dirname, "../../All-In-One-Bot/src/events");
     if (fs.existsSync(aioEventsPath)) {
       recursiveReadDirSync(aioEventsPath).forEach((filePath) => {
