@@ -4,8 +4,8 @@ services:
     env: node
     region: oregon
     plan: free
-    buildCommand: cd vendor/VantyxBot/bot && npm install
-    startCommand: cd vendor/VantyxBot/bot && npm start
+    buildCommand: npm install
+    startCommand: node vendor/VantyxBot/bot/index.js
     envVars:
       - key: PORT
         value: "10000"
@@ -38,8 +38,8 @@ services:
     env: node
     region: oregon
     plan: free
-    buildCommand: cd vendor/VantyxBot/api && npm install
-    startCommand: cd vendor/VantyxBot/api && npm start
+    buildCommand: npm install
+    startCommand: node vendor/VantyxBot/api/index.js
     envVars:
       - key: NODE_ENV
         value: production
@@ -60,7 +60,7 @@ services:
     env: node
     region: oregon
     plan: free
-    buildCommand: cd vendor/VantyxBot/dashboard && npm install && npm run build
+    buildCommand: npm install && cd vendor/VantyxBot/dashboard && npm run build
     startCommand: cd vendor/VantyxBot/dashboard && npm start
     envVars:
       - key: NODE_ENV
