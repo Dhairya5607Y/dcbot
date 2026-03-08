@@ -10,6 +10,22 @@ const {
 const fs = require("fs");
 const path = require("path");
 
+// --- START MODULE RESOLUTION FIX ---
+// This forces nested AIO files to fallback to searching VantyxBot's node_modules
+const Module = require("module");
+const originalResolveFilename = Module._resolveFilename;
+Module._resolveFilename = function(request, parent, isMain, options) {
+  try {
+    return originalResolveFilename.apply(this, arguments);
+  } catch (e) {
+    if (e.code === 'MODULE_NOT_FOUND' && !request.startsWith('.')) {
+      return originalResolveFilename.call(this, request, module, isMain, options);
+    }
+    throw e;
+  }
+};
+// --- END MODULE RESOLUTION FIX ---
+
 // Map Render environment variables to what the new bot expects
 process.env.MONGO_TOKEN = process.env.MONGO_URI; 
 process.env.DISCORD_ID = process.env.CLIENT_ID;
@@ -81,9 +97,11 @@ for (const webhookName of webHooksArray) {
     require("./src/handlers/eventHandler")(client);
 
     // 4. Load New Bot Handlers & Commands
-    // Override process.cwd() temporarily so internal absolute requires work
-    const originalCwd = process.cwd;
-    process.cwd = () => path.join(__dirname, "../../All-In-One-Bot");
+    // Sub-bots check native `process.cwd()` for files like `./src/interactions`.
+    // We must physically change the operating system context.
+    const originalCwd = process.cwd();
+    const aioRoot = path.join(__dirname, "../../All-In-One-Bot");
+    process.chdir(aioRoot);
     
     fs.readdirSync(path.join(aioPath, 'handlers')).forEach((dir) => {
         fs.readdirSync(path.join(aioPath, `handlers/${dir}`)).forEach((handler) => {
@@ -95,7 +113,9 @@ for (const webhookName of webHooksArray) {
         });
     });
 
-    process.cwd = originalCwd; // Restore 
+    try {
+      process.chdir(originalCwd); // Restore 
+    } catch(e) {}
 
     // Sync slash commands with Discord API (Vantyx method)
     const registerCommands = require("./src/utils/registerCommands");
