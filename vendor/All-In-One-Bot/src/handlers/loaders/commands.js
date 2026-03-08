@@ -23,6 +23,7 @@ module.exports = (client) => {
 
         for (const file of commandFiles) {
             const command = require(`${process.cwd()}/src/interactions/${dirs}/${file}`);
+            command.category = dirs; // Set category for Vantyx Dashboard sync
             client.commands.set(command.data.name, command);
             commands.push(command.data);
         };

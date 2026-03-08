@@ -92,21 +92,37 @@ for (const webhookName of webHooksArray) {
     // 2. Establish New AIO Database connection
     await require(path.join(aioPath, "database/connect"))();
 
-    // 3. Load Vantyx Events and AIO Handlers/Commands
+    // 3. Load Vantyx Events 
     require("./src/handlers/eventHandler")(client);
 
     // 4. Load New Bot Handlers & Commands
-    // Sub-bots check native `process.cwd()` for files like `./src/interactions`.
+    // We physically change the directory context so AIO files find their native './src' folders
     const originalCwd = process.cwd();
     const aioRoot = path.join(__dirname, "../../All-In-One-Bot");
     process.chdir(aioRoot);
     
+    // EXPLICIT LOAD: Loaders first (Commands and Events)
+    const loadersPath = path.join(aioPath, 'handlers/loaders');
+    if (fs.existsSync(loadersPath)) {
+        fs.readdirSync(loadersPath).forEach(file => {
+            try {
+                require(path.join(loadersPath, file))(client);
+                logger.info(`Loaded AIO Loader: ${file}`);
+            } catch (e) {
+                logger.error(`FAILED to load AIO loader ${file}: ${e.message}`);
+                console.error(e.stack);
+            }
+        });
+    }
+
+    // Load remaining handlers
     fs.readdirSync(path.join(aioPath, 'handlers')).forEach((dir) => {
+        if (dir === 'loaders') return; // Skip what we just loaded
         fs.readdirSync(path.join(aioPath, `handlers/${dir}`)).forEach((handler) => {
             try {
               require(path.join(aioPath, `handlers/${dir}/${handler}`))(client);
             } catch (e) {
-              logger.warn(`Skipped new AIO handler ${handler}: ${e.message}`);
+              logger.warn(`Skipped AIO handler ${handler}: ${e.message}`);
             }
         });
     });
