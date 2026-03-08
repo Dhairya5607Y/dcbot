@@ -32,6 +32,13 @@ module.exports = (client) => {
 
     let manager;
     try {
+        // Compatibility Hack: Ensure intents is a number before passing to the library
+        // This fixes 'Invalid bitfield' errors in multi-version environments
+        const originalIntents = client.options.intents;
+        if (client.options.intents && typeof client.options.intents !== 'number') {
+            client.options.intents = Number(client.options.intents.bitfield || client.options.intents);
+        }
+
         manager = new GiveawayManagerWithOwnDatabase(client, {
             default: {
                 botsCanWin: false,
@@ -40,9 +47,13 @@ module.exports = (client) => {
                 reaction: '🥳'
             }
         }, true);
+
+        // Restore original intents object
+        client.options.intents = originalIntents;
     } catch (e) {
         console.error(`[ERROR] Failed to initialize GiveawaysManager: ${e.message}`);
-        return; // Exit handler if manager can't be created
+        console.error(e.stack); // Print full stack for debugging
+        return;
     }
 
     client.giveawaysManager = manager;

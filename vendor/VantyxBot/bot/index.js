@@ -109,7 +109,6 @@ for (const webhookName of webHooksArray) {
               require(path.join(aioPath, `handlers/${dir}/${handler}`))(client);
             } catch (e) {
               logger.warn(`Skipped new AIO handler ${handler}: ${e.message}`);
-              if (handler === 'giveaway.js') console.error(e.stack);
             }
         });
     });
