@@ -92,13 +92,11 @@ for (const webhookName of webHooksArray) {
     // 2. Establish New AIO Database connection
     await require(path.join(aioPath, "database/connect"))();
 
-    // 3. Load Vantyx Handlers (XP, Logging, AutoMod)
-    require("./src/handlers/commandHandler")(client);
+    // 3. Load Vantyx Events and AIO Handlers/Commands
     require("./src/handlers/eventHandler")(client);
 
     // 4. Load New Bot Handlers & Commands
     // Sub-bots check native `process.cwd()` for files like `./src/interactions`.
-    // We must physically change the operating system context.
     const originalCwd = process.cwd();
     const aioRoot = path.join(__dirname, "../../All-In-One-Bot");
     process.chdir(aioRoot);
@@ -116,6 +114,10 @@ for (const webhookName of webHooksArray) {
     try {
       process.chdir(originalCwd); // Restore 
     } catch(e) {}
+
+    // 5. Sync AI/AIO commands with the Vantyx Dashboard database
+    // We do this AFTER the AIO handlers have populated client.commands
+    require("./src/handlers/commandHandler")(client);
 
     // Sync slash commands with Discord API (Vantyx method)
     const registerCommands = require("./src/utils/registerCommands");
