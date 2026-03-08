@@ -1,37 +1,30 @@
-const { musicValidations } = require("@helpers/BotUtils");
+const Discord = require('discord.js');
 
-/**
- * @type {import("@structures/Command")}
- */
-module.exports = {
-  name: "resume",
-  description: "resumes the music player",
-  category: "MUSIC",
-  validations: musicValidations,
-  command: {
-    enabled: true,
-  },
-  slashCommand: {
-    enabled: true,
-  },
+module.exports = async (client, interaction, args) => {
+    const player = client.player.players.get(interaction.guild.id);
+    
+    const channel = interaction.member.voice.channel;
+    if (!channel) return client.errNormal({
+        error: `You're not in a voice channel!`,
+        type: 'editreply'
+    }, interaction);
 
-  async messageRun(message, args) {
-    const response = resumePlayer(message);
-    await message.safeReply(response);
-  },
+    if (player && (channel.id !== player?.voiceChannel)) return client.errNormal({
+        error: `You're not in the same voice channel!`,
+        type: 'editreply'
+    }, interaction);
 
-  async interactionRun(interaction) {
-    const response = resumePlayer(interaction);
-    await interaction.followUp(response);
-  },
-};
+    if (!player || !player.queue.current) return client.errNormal({
+        error: "There are no songs playing in this server",
+        type: 'editreply'
+    }, interaction);
 
-/**
- * @param {import("discord.js").CommandInteraction|import("discord.js").Message} arg0
- */
-function resumePlayer({ client, guildId }) {
-  const player = client.musicManager.getPlayer(guildId);
-  if (!player.paused) return "The player is already resumed";
-  player.resume();
-  return "▶️ Resumed the music player";
+    player.pause(false)
+
+    client.succNormal({
+        text: `Resumed the music!`,
+        type: 'editreply'
+    }, interaction);
 }
+
+ 

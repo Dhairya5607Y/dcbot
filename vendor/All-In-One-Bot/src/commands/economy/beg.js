@@ -1,76 +1,50 @@
-const { EmbedBuilder } = require("discord.js");
-const { getUser } = require("@schemas/User");
-const { EMBED_COLORS, ECONOMY } = require("@root/config.js");
+const Discord = require('discord.js');
 
-/**
- * @type {import("@structures/Command")}
- */
-module.exports = {
-  name: "beg",
-  description: "beg from someone",
-  category: "ECONOMY",
-  cooldown: 21600,
-  botPermissions: ["EmbedLinks"],
-  command: {
-    enabled: true,
-  },
-  slashCommand: {
-    enabled: true,
-  },
+const Schema = require("../../database/models/economyTimeout");
 
-  async messageRun(message, args) {
-    const response = await beg(message.author);
-    await message.safeReply(response);
-  },
+module.exports = async (client, interaction, args) => {
+    let user = interaction.user;
 
-  async interactionRun(interaction) {
-    const response = await beg(interaction.user);
-    await interaction.followUp(response);
-  },
-};
+    let timeout = 180000;
+    let amount = 5;
 
-async function beg(user) {
-  let users = [
-    "PewDiePie",
-    "T-Series",
-    "Sans",
-    "RLX",
-    "Pro Gamer 711",
-    "Zenitsu",
-    "Jake Paul",
-    "Kaneki Ken",
-    "KSI",
-    "Naruto",
-    "Mr. Beast",
-    "Ur Mom",
-    "A Broke Person",
-    "Giyu Tomiaka",
-    "Bejing Embacy",
-    "A Random Asian Mom",
-    "Ur Step Sis",
-    "Jin Mori",
-    "Sakura (AKA Trash Can)",
-    "Hammy The Hamster",
-    "Kakashi Sensei",
-    "Minato",
-    "Tanjiro",
-    "ZHC",
-    "The IRS",
-    "Joe Mama",
-  ];
+    Schema.findOne({ Guild: interaction.guild.id, User: user.id }, async (err, dataTime) => {
+        if (dataTime && dataTime.Beg !== null && timeout - (Date.now() - dataTime.Beg) > 0) {
+            let time = (dataTime.Beg / 1000 + timeout / 1000).toFixed(0);
+            return client.errWait({
+                time: time,
+                type: 'editreply'
+            }, interaction);
+        }
+        else {
 
-  let amount = Math.floor(Math.random() * `${ECONOMY.MAX_BEG_AMOUNT}` + `${ECONOMY.MIN_BEG_AMOUNT}`);
-  const userDb = await getUser(user);
-  userDb.coins += amount;
-  await userDb.save();
+            client.succNormal({
+                text: `You've begged for some money!`,
+                fields: [
+                    {
+                        name: `${client.emotes.economy.coins}┆Amount`,
+                        value: `$${amount}`,
+                        inline: true
+                    }
+                ],
+                type: 'editreply'
+            }, interaction);
 
-  const embed = new EmbedBuilder()
-    .setColor(EMBED_COLORS.BOT_EMBED)
-    .setAuthor({ name: `${user.username}`, iconURL: user.displayAvatarURL() })
-    .setDescription(
-      `**${users[Math.floor(Math.random() * users.length)]}** donated you **${amount}** ${ECONOMY.CURRENCY}\n` +
-        `**Updated Balance:** **${userDb.coins}** ${ECONOMY.CURRENCY}`
-    );
+            if (dataTime) {
+                dataTime.Beg = Date.now();
+                dataTime.save();
+            }
+            else {
+                new Schema({
+                    Guild: interaction.guild.id,
+                    User: user.id,
+                    Beg: Date.now()
+                }).save();
+            }
 
-  return { embeds: [embed] };
+            client.addMoney(interaction, user, amount);
+        }
+    })
 }
+
+ 

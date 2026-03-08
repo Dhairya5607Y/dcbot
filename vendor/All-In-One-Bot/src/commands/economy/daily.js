@@ -1,62 +1,50 @@
-const { EmbedBuilder } = require("discord.js");
-const { getUser } = require("@schemas/User");
-const { EMBED_COLORS, ECONOMY } = require("@root/config.js");
-const { diffHours, getRemainingTime } = require("@helpers/Utils");
+const Discord = require('discord.js');
 
-/**
- * @type {import("@structures/Command")}
- */
-module.exports = {
-  name: "daily",
-  description: "receive a daily bonus",
-  category: "ECONOMY",
-  botPermissions: ["EmbedLinks"],
-  command: {
-    enabled: true,
-  },
-  slashCommand: {
-    enabled: true,
-  },
+const Schema = require("../../database/models/economy");
+const Schema2 = require("../../database/models/economyTimeout");
 
-  async messageRun(message, args) {
-    const response = await daily(message.author);
-    await message.safeReply(response);
-  },
+module.exports = async (client, interaction, args) => {
+  let user = interaction.user;
+  let timeout = 86400000;
+  let amount = 200;
 
-  async interactionRun(interaction) {
-    const response = await daily(interaction.user);
-    await interaction.followUp(response);
-  },
-};
-
-async function daily(user) {
-  const userDb = await getUser(user);
-  let streak = 0;
-
-  if (userDb.daily.timestamp) {
-    const lastUpdated = new Date(userDb.daily.timestamp);
-    const difference = diffHours(new Date(), lastUpdated);
-    if (difference < 24) {
-      const nextUsage = lastUpdated.setHours(lastUpdated.getHours() + 24);
-      return `You can again run this command in \`${getRemainingTime(nextUsage)}\``;
+  Schema2.findOne({ Guild: interaction.guild.id, User: user.id }, async (err, dataTime) => {
+    if (dataTime && dataTime.Daily !== null && timeout - (Date.now() - dataTime.Daily) > 0) {
+      let time = (dataTime.Daily / 1000 + timeout / 1000).toFixed(0);
+      return client.errWait({
+        time: time,
+        type: 'editreply'
+      }, interaction);
     }
-    streak = userDb.daily.streak || streak;
-    if (difference < 48) streak += 1;
-    else streak = 0;
-  }
+    else {
 
-  userDb.daily.streak = streak;
-  userDb.coins += ECONOMY.DAILY_COINS;
-  userDb.daily.timestamp = new Date();
-  await userDb.save();
+      client.succNormal({
+        text: `You've collected your daily reward!`,
+        fields: [
+          {
+            name: `${client.emotes.economy.coins}┆Amount`,
+            value: `$${amount}`,
+            inline: true
+          }
+        ],
+        type: 'editreply'
+      }, interaction);
 
-  const embed = new EmbedBuilder()
-    .setColor(EMBED_COLORS.BOT_EMBED)
-    .setAuthor({ name: user.username, iconURL: user.displayAvatarURL() })
-    .setDescription(
-      `You got ${ECONOMY.DAILY_COINS}${ECONOMY.CURRENCY} as your daily reward\n` +
-        `**Updated Balance:** ${userDb.coins}${ECONOMY.CURRENCY}`
-    );
+      if (dataTime) {
+        dataTime.Daily = Date.now();
+        dataTime.save();
+      }
+      else {
+        new Schema2({
+          Guild: interaction.guild.id,
+          User: user.id,
+          Daily: Date.now()
+        }).save();
+      }
 
-  return { embeds: [embed] };
+      client.addMoney(interaction, user, amount);
+    }
+  })
 }
+
+ 

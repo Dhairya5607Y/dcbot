@@ -1,36 +1,35 @@
-const { musicValidations } = require("@helpers/BotUtils");
+const Discord = require('discord.js');
 
-/**
- * @type {import("@structures/Command")}
- */
-module.exports = {
-  name: "shuffle",
-  description: "shuffle the queue",
-  category: "MUSIC",
-  validations: musicValidations,
-  command: {
-    enabled: true,
-  },
-  slashCommand: {
-    enabled: true,
-  },
+module.exports = async (client, interaction, args) => {
+    const player = client.player.players.get(interaction.guild.id);
+    
+    const channel = interaction.member.voice.channel;
+    if (!channel) return client.errNormal({
+        error: `You're not in a voice channel!`,
+        type: 'editreply'
+    }, interaction);
 
-  async messageRun(message, args) {
-    const response = shuffle(message);
-    await message.safeReply(response);
-  },
+    if (player && (channel.id !== player?.voiceChannel)) return client.errNormal({
+        error: `You're not in the same voice channel!`,
+        type: 'editreply'
+    }, interaction);
 
-  async interactionRun(interaction) {
-    const response = shuffle(interaction);
-    await interaction.followUp(response);
-  },
-};
+    if (!player || !player.queue.current) return client.errNormal({
+        error: "There are no songs playing in this server",
+        type: 'editreply'
+    }, interaction);
 
-/**
- * @param {import("discord.js").CommandInteraction|import("discord.js").Message} arg0
- */
-function shuffle({ client, guildId }) {
-  const player = client.musicManager.getPlayer(guildId);
-  player.queue.shuffle();
-  return "🎶 Queue has been shuffled";
+    if (player.queue.size === 0) return client.errNormal({
+        error: "Not enough song to shuffle",
+        type: 'editreply'
+    }, interaction);
+
+    player.queue.shuffle()
+
+    client.succNormal({
+        text: `Shuffled the queue!`,
+        type: 'editreply'
+    }, interaction);
 }
+
+ 

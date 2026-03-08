@@ -1,52 +1,47 @@
-const { musicValidations } = require("@helpers/BotUtils");
-const { ApplicationCommandOptionType } = require("discord.js");
+const Discord = require('discord.js');
 
-/**
- * @type {import("@structures/Command")}
- */
-module.exports = {
-  name: "volume",
-  description: "set the music player volume",
-  category: "MUSIC",
-  validations: musicValidations,
-  command: {
-    enabled: true,
-    usage: "<1-100>",
-  },
-  slashCommand: {
-    enabled: true,
-    options: [
-      {
-        name: "amount",
-        description: "Enter a value to set [0 to 100]",
-        type: ApplicationCommandOptionType.Integer,
-        required: false,
-      },
-    ],
-  },
+module.exports = async (client, interaction, args) => {
+    const player = client.player.players.get(interaction.guild.id);
 
-  async messageRun(message, args) {
-    const amount = args[0];
-    const response = await volume(message, amount);
-    await message.safeReply(response);
-  },
+    const channel = interaction.member.voice.channel;
+    if (!channel) return client.errNormal({
+        error: `You're not in a voice channel!`,
+        type: 'editreply'
+    }, interaction);
 
-  async interactionRun(interaction) {
-    const amount = interaction.options.getInteger("amount");
-    const response = await volume(interaction, amount);
-    await interaction.followUp(response);
-  },
-};
+    if (player && (channel.id !== player?.voiceChannel)) return client.errNormal({
+        error: `You're not in the same voice channel!`,
+        type: 'editreply'
+    }, interaction);
 
-/**
- * @param {import("discord.js").CommandInteraction|import("discord.js").Message} arg0
- */
-async function volume({ client, guildId }, volume) {
-  const player = client.musicManager.getPlayer(guildId);
+    if (!player || !player.queue.current) return client.errNormal({
+        error: "There are no songs playing in this server",
+        type: 'editreply'
+    }, interaction);
 
-  if (!volume) return `> The player volume is \`${player.volume}\`.`;
-  if (volume < 1 || volume > 100) return "you need to give me a volume between 1 and 100.";
+    let amount = interaction.options.getNumber('amount');
 
-  await player.setVolume(volume);
-  return `🎶 Music player volume is set to \`${volume}\`.`;
+    if (!amount) return client.simpleEmbed({
+        desc: `${client.emotes.normal.volume}┆Current volume is **${player.volume}%**`,
+        type: 'editreply'
+    }, interaction);
+
+    if (isNaN(amount) || amount === 'Infinity') return client.errNormal({
+        text: `Please enter a valid number!`,
+        type: 'editreply'
+    }, interaction);
+
+    if (Math.round(parseInt(amount)) < 1 || Math.round(parseInt(amount)) > 1000) return client.errNormal({
+        text: "Volume cannot exceed 1000%",
+        type: 'editreply'
+    }, interaction);
+
+    player.setVolume(parseInt(amount))
+
+    client.succNormal({
+        text: `Volume set to **${amount}%**`,
+        type: 'editreply'
+    }, interaction);
 }
+
+ 

@@ -1,136 +1,54 @@
-const { EmbedBuilder, ApplicationCommandOptionType } = require("discord.js");
-const { getWarningLogs, clearWarningLogs } = require("@schemas/ModLog");
-const { getMember } = require("@schemas/Member");
+const Discord = require('discord.js');
 
-/**
- * @type {import("@structures/Command")}
- */
-module.exports = {
-  name: "warnings",
-  description: "list or clear user warnings",
-  category: "MODERATION",
-  userPermissions: ["KickMembers"],
-  command: {
-    enabled: true,
-    minArgsCount: 1,
-    subcommands: [
-      {
-        trigger: "list [member]",
-        description: "list all warnings for a user",
-      },
-      {
-        trigger: "clear <member>",
-        description: "clear all warnings for a user",
-      },
-    ],
-  },
-  slashCommand: {
-    enabled: true,
-    options: [
-      {
-        name: "list",
-        description: "list all warnings for a user",
-        type: ApplicationCommandOptionType.Subcommand,
-        options: [
-          {
-            name: "user",
-            description: "the target member",
-            type: ApplicationCommandOptionType.User,
-            required: true,
-          },
-        ],
-      },
-      {
-        name: "clear",
-        description: "clear all warnings for a user",
-        type: ApplicationCommandOptionType.Subcommand,
-        options: [
-          {
-            name: "user",
-            description: "the target member",
-            type: ApplicationCommandOptionType.User,
-            required: true,
-          },
-        ],
-      },
-    ],
-  },
+const Schema = require("../../database/models/warnings");
 
-  async messageRun(message, args) {
-    const sub = args[0]?.toLowerCase();
-    let response = "";
+module.exports = async (client, interaction, args) => {
+    const perms = await client.checkUserPerms({
+        flags: [Discord.PermissionsBitField.Flags.ManageMessages],
+        perms: [Discord.PermissionsBitField.Flags.ManageMessages]
+    }, interaction);
 
-    if (sub === "list") {
-      const target = (await message.guild.resolveMember(args[1], true)) || message.member;
-      if (!target) return message.safeReply(`No user found matching ${args[1]}`);
-      response = await listWarnings(target, message);
+    if (perms == false) {
+        client.errNormal({
+            error: "You don't have the required permissions to use this command!",
+            type: 'editreply'
+        }, interaction);
+        return;
     }
 
-    //
-    else if (sub === "clear") {
-      const target = await message.guild.resolveMember(args[1], true);
-      if (!target) return message.safeReply(`No user found matching ${args[1]}`);
-      response = await clearWarnings(target, message);
-    }
+    const member = interaction.options.getUser('user');
 
-    // else
-    else {
-      response = `Invalid subcommand ${sub}`;
-    }
 
-    await message.safeReply(response);
-  },
-
-  async interactionRun(interaction) {
-    const sub = interaction.options.getSubcommand();
-    let response = "";
-
-    if (sub === "list") {
-      const user = interaction.options.getUser("user");
-      const target = (await interaction.guild.members.fetch(user.id)) || interaction.member;
-      response = await listWarnings(target, interaction);
-    }
-
-    //
-    else if (sub === "clear") {
-      const user = interaction.options.getUser("user");
-      const target = await interaction.guild.members.fetch(user.id);
-      response = await clearWarnings(target, interaction);
-    }
-
-    // else
-    else {
-      response = `Invalid subcommand ${sub}`;
-    }
-
-    await interaction.followUp(response);
-  },
-};
-
-async function listWarnings(target, { guildId }) {
-  if (!target) return "No user provided";
-  if (target.user.bot) return "Bots don't have warnings";
-
-  const warnings = await getWarningLogs(guildId, target.id);
-  if (!warnings.length) return `${target.user.username} has no warnings`;
-
-  const acc = warnings.map((warning, i) => `${i + 1}. ${warning.reason} [By ${warning.admin.username}]`).join("\n");
-  const embed = new EmbedBuilder({
-    author: { name: `${target.user.username}'s warnings` },
-    description: acc,
-  });
-
-  return { embeds: [embed] };
+    Schema.findOne({ Guild: interaction.guild.id, User: member.id }, async (err, data) => {
+        if (data) {
+            var fields = [];
+            data.Warnings.forEach(element => {
+                fields.push({
+                    name: "Warning **" + element.Case + "**",
+                    value: "Reason: " + element.Reason + "\nModerator <@!" + element.Moderator + ">",
+                    inline: true
+                })
+            });
+            client.embed({
+                title: `${client.emotes.normal.error}・Warnings`,
+                desc: `The warnings of **${member.tag}**`,
+                fields: [
+                    {
+                        name: "Total",
+                        value: `${data.Warnings.length}`,
+                    },
+                    ...fields
+                ],
+                type: 'editreply'
+            }, interaction)
+        }
+        else {
+            client.embed({
+                title: `${client.emotes.normal.error}・Warnings`,
+                desc: `User ${member.user.tag} has no warnings!`,
+                type: 'editreply'
+            }, interaction)
+        }
+    })
 }
 
-async function clearWarnings(target, { guildId }) {
-  if (!target) return "No user provided";
-  if (target.user.bot) return "Bots don't have warnings";
-
-  const memberDb = await getMember(guildId, target.id);
-  memberDb.warnings = 0;
-  await memberDb.save();
-
-  await clearWarningLogs(guildId, target.id);
-  return `${target.user.username}'s warnings have been cleared`;
-}

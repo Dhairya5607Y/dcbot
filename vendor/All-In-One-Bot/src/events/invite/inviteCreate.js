@@ -1,14 +1,25 @@
-const { getInviteCache, cacheInvite } = require("@handlers/invite");
+const discord = require('discord.js');
 
-/**
- * @param {import('@src/structures').BotClient} client
- * @param {import('discord.js').Invite} invite
- */
 module.exports = async (client, invite) => {
-  const cachedInvites = getInviteCache(invite?.guild);
+    const logsChannel = await client.getLogs(invite.guild.id);
+    if (!logsChannel) return;
 
-  // Check if cache for the guild exists and then add it to cache
-  if (cachedInvites) {
-    cachedInvites.set(invite.code, cacheInvite(invite, false));
-  }
+    client.embed({
+        title: `📨・Invite created`,
+        desc: `A invite has been created`,
+        fields: [
+            {
+                name: `> Code`,
+                value: `- ${invite.code}`
+            },
+            {
+                name: `> Inviter`,
+                value: `- ${invite.inviter} (${invite.inviter.tag})`
+            },
+            {
+                name: `> Timestamp`,
+                value: `- <t:${Math.floor(invite.createdTimestamp / 1000)}:R>`
+            }
+        ]
+    }, logsChannel).catch(() => { })
 };

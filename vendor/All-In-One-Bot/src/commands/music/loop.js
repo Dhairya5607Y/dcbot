@@ -1,72 +1,31 @@
-const { musicValidations } = require("@helpers/BotUtils");
-const { LoopType } = require("@lavaclient/queue");
-const { ApplicationCommandOptionType } = require("discord.js");
+const Discord = require('discord.js');
 
-/**
- * @type {import("@structures/Command")}
- */
-module.exports = {
-  name: "loop",
-  description: "loops the song or queue",
-  category: "MUSIC",
-  validations: musicValidations,
-  command: {
-    enabled: true,
-    minArgsCount: 1,
-    usage: "<queue|track>",
-  },
-  slashCommand: {
-    enabled: true,
-    options: [
-      {
-        name: "type",
-        type: ApplicationCommandOptionType.String,
-        description: "The entity you want to loop",
-        required: false,
-        choices: [
-          {
-            name: "queue",
-            value: "queue",
-          },
-          {
-            name: "track",
-            value: "track",
-          },
-        ],
-      },
-    ],
-  },
+module.exports = async (client, interaction, args) => {
+    const player = client.player.players.get(interaction.guild.id);
 
-  async messageRun(message, args) {
-    const input = args[0].toLowerCase();
-    const type = input === "queue" ? "queue" : "track";
-    const response = toggleLoop(message, type);
-    await message.safeReply(response);
-  },
+    const channel = interaction.member.voice.channel;
+    if (!channel) return client.errNormal({
+        error: `You're not in a voice channel!`,
+        type: 'editreply'
+    }, interaction);
 
-  async interactionRun(interaction) {
-    const type = interaction.options.getString("type") || "track";
-    const response = toggleLoop(interaction, type);
-    await interaction.followUp(response);
-  },
-};
+    if (player && (channel.id !== player?.voiceChannel)) return client.errNormal({
+        error: `You're not in the same voice channel!`,
+        type: 'editreply'
+    }, interaction);
 
-/**
- * @param {import("discord.js").CommandInteraction|import("discord.js").Message} arg0
- * @param {"queue"|"track"} type
- */
-function toggleLoop({ client, guildId }, type) {
-  const player = client.musicManager.getPlayer(guildId);
+    if (!player || !player.queue.current) return client.errNormal({
+        error: "There are no songs playing in this server",
+        type: 'editreply'
+    }, interaction);
 
-  // track
-  if (type === "track") {
-    player.queue.setLoop(LoopType.Song);
-    return "Loop mode is set to `track`";
-  }
+    player.setTrackRepeat(!player.trackRepeat);
+    const trackRepeat = player.trackRepeat ? "enabled" : "disabled";
 
-  // queue
-  else if (type === "queue") {
-    player.queue.setLoop(1);
-    return "Loop mode is set to `queue`";
-  }
+    client.succNormal({
+        text: `Loop is **${trackRepeat}** for the current song`,
+        type: 'editreply'
+    }, interaction);
 }
+
+ 

@@ -1,38 +1,30 @@
-const { musicValidations } = require("@helpers/BotUtils");
+const Discord = require('discord.js');
 
-/**
- * @type {import("@structures/Command")}
- */
-module.exports = {
-  name: "pause",
-  description: "pause the music player",
-  category: "MUSIC",
-  validations: musicValidations,
-  command: {
-    enabled: true,
-  },
-  slashCommand: {
-    enabled: true,
-  },
+module.exports = async (client, interaction, args) => {
+    const player = client.player.players.get(interaction.guild.id);
 
-  async messageRun(message, args) {
-    const response = pause(message);
-    await message.safeReply(response);
-  },
+    const channel = interaction.member.voice.channel;
+    if (!channel) return client.errNormal({
+        error: `You're not in a voice channel!`,
+        type: 'editreply'
+    }, interaction);
 
-  async interactionRun(interaction) {
-    const response = pause(interaction);
-    await interaction.followUp(response);
-  },
-};
+    if (player && (channel.id !== player?.voiceChannel)) return client.errNormal({
+        error: `You're not in the same voice channel!`,
+        type: 'editreply'
+    }, interaction);
 
-/**
- * @param {import("discord.js").CommandInteraction|import("discord.js").Message} arg0
- */
-function pause({ client, guildId }) {
-  const player = client.musicManager.getPlayer(guildId);
-  if (player.paused) return "The player is already paused.";
+    if (!player || !player.queue.current) return client.errNormal({
+        error: "There are no songs playing in this server",
+        type: 'editreply'
+    }, interaction);
 
-  player.pause(true);
-  return "⏸️ Paused the music player.";
+    player.pause(true)
+
+    client.succNormal({
+        text: `Paused the music!`,
+        type: 'editreply'
+    }, interaction);
 }
+
+ 

@@ -1,60 +1,61 @@
-const { kickTarget } = require("@helpers/ModUtils");
-const { ApplicationCommandOptionType } = require("discord.js");
+const Discord = require('discord.js');
 
-/**
- * @type {import("@structures/Command")}
- */
-module.exports = {
-  name: "kick",
-  description: "kicks the specified member",
-  category: "MODERATION",
-  botPermissions: ["KickMembers"],
-  userPermissions: ["KickMembers"],
-  command: {
-    enabled: true,
-    usage: "<ID|@member> [reason]",
-    minArgsCount: 1,
-  },
-  slashCommand: {
-    enabled: true,
-    options: [
+module.exports = async (client, interaction, args) => {
+  const perms = await client.checkPerms({
+    flags: [Discord.PermissionsBitField.Flags.KickMembers],
+    perms: [Discord.PermissionsBitField.Flags.KickMembers]
+  }, interaction)
+
+  if (perms == false) return;
+
+  const member = await interaction.guild.members.fetch(interaction.options.getUser('user').id);
+  const reason = interaction.options.getString('reason') || 'Not given';
+
+  if (member.permissions.has(Discord.PermissionsBitField.Flags.KickMembers) || member.permissions.has(Discord.PermissionsBitField.Flags.KickMembers)) return client.errNormal({
+    error: "You can't kick a moderator",
+    type: 'editreply'
+  }, interaction);
+
+  client.embed({
+    title: `🔨・Kick`,
+    desc: `You've been kicked in **${interaction.guild.name}**`,
+    fields: [
       {
-        name: "user",
-        description: "the target member",
-        type: ApplicationCommandOptionType.User,
-        required: true,
+        name: "👤┆Kicked by",
+        value: interaction.user.tag,
+        inline: true
       },
       {
-        name: "reason",
-        description: "reason for kick",
-        type: ApplicationCommandOptionType.String,
-        required: false,
-      },
-    ],
-  },
-
-  async messageRun(message, args) {
-    const target = await message.guild.resolveMember(args[0], true);
-    if (!target) return message.safeReply(`No user found matching ${args[0]}`);
-    const reason = message.content.split(args[0])[1].trim();
-    const response = await kick(message.member, target, reason);
-    await message.safeReply(response);
-  },
-
-  async interactionRun(interaction) {
-    const user = interaction.options.getUser("user");
-    const reason = interaction.options.getString("reason");
-    const target = await interaction.guild.members.fetch(user.id);
-
-    const response = await kick(interaction.member, target, reason);
-    await interaction.followUp(response);
-  },
-};
-
-async function kick(issuer, target, reason) {
-  const response = await kickTarget(issuer, target, reason);
-  if (typeof response === "boolean") return `${target.user.username} is kicked!`;
-  if (response === "BOT_PERM") return `I do not have permission to kick ${target.user.username}`;
-  else if (response === "MEMBER_PERM") return `You do not have permission to kick ${target.user.username}`;
-  else return `Failed to kick ${target.user.username}`;
+        name: "💬┆Reason",
+        value: reason,
+        inline: true
+      }
+    ]
+  }, member).then(function () {
+    member.kick(reason)
+    client.succNormal({
+      text: "The specified user has been successfully kicked and successfully received a notification!",
+      fields: [
+        {
+          name: "👤┆Kicked user",
+          value: member.user.tag,
+          inline: true
+        },
+        {
+          name: "💬┆Reason",
+          value: reason,
+          inline: true
+        }
+      ],
+      type: 'editreply'
+    }, interaction);
+  }).catch(function () {
+    member.kick(reason)
+    client.succNormal({
+      text: "The given user has been successfully kicked, but has not received a notification!",
+      type: 'editreply'
+    }, interaction);
+  });
 }
+
+ 

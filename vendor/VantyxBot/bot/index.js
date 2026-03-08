@@ -3,25 +3,16 @@ const {
   GatewayIntentBits,
   Partials,
   Collection,
+  WebhookClient,
+  EmbedBuilder,
+  codeBlock
 } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
-const moduleAlias = require("module-alias");
 
-// Register All-In-One aliases so its internal @helpers, @src, etc. work
-moduleAlias.addAliases({
-  "@root": path.join(__dirname, "../../All-In-One-Bot"),
-  "@handlers": path.join(__dirname, "../../All-In-One-Bot/src/handlers"),
-  "@helpers": path.join(__dirname, "../../All-In-One-Bot/src/helpers"),
-  "@schemas": path.join(__dirname, "../../All-In-One-Bot/src/database/schemas"),
-  "@src": path.join(__dirname, "../../All-In-One-Bot/src"),
-  "@structures": path.join(__dirname, "../../All-In-One-Bot/src/structures"),
-});
-
-// Load AIO extenders (Guild, Message, etc.)
-require("../../All-In-One-Bot/src/helpers/extenders/Guild");
-require("../../All-In-One-Bot/src/helpers/extenders/GuildChannel");
-require("../../All-In-One-Bot/src/helpers/extenders/Message");
+// Map Render environment variables to what the new bot expects
+process.env.MONGO_TOKEN = process.env.MONGO_URI; 
+process.env.DISCORD_ID = process.env.CLIENT_ID;
 
 const config = require("../config.js");
 const logger = require("./src/utils/logger");
@@ -29,95 +20,84 @@ const connectDB = require("./src/database/mongoose");
 const startSchedulers = require("./src/utils/scheduler");
 
 /**
- * Initialize Discord Client with necessary intents and partials.
- * Intents are required to receive specific events from Discord.
+ * Initialize Discord Client with ALL intents for the new 400+ commands bot
  */
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildPresences,
-    GatewayIntentBits.GuildVoiceStates,
-    GatewayIntentBits.GuildInvites,
-    GatewayIntentBits.GuildMessageReactions,
-  ],
+  allowedMentions: { parse: ['users', 'roles'], repliedUser: true },
+  autoReconnect: true,
+  disabledEvents: ["TYPING_START"],
   partials: [
-    Partials.Message,
     Partials.Channel,
+    Partials.GuildMember,
+    Partials.Message,
     Partials.Reaction,
     Partials.User,
-    Partials.GuildMember,
+    Partials.GuildScheduledEvent
   ],
+  intents: Object.values(GatewayIntentBits).filter(Number.isInteger), // All intents
+  restTimeOffset: 0
 });
 
-// Attach logger to client for AIO commands
+// Attach core VantyxBot variables
 client.logger = logger;
-
-// Attach commands collection and config to the client for easy access
 client.commands = new Collection();
-client.slashCommands = client.commands; // Bridge for AIO
-client.contextMenus = new Collection(); // Placeholder for AIO context menus
+client.slashCommands = client.commands; 
+client.contextMenus = new Collection();
+
 client.getCommand = (invoke) => client.commands.get(invoke.toLowerCase());
-client.registerInteractions = async () => {
-  // Dummy function to prevent AIO's ready.js from registering interactions
-  // as we handle it manually in registerCommands.js
-};
 
-// --- Initialize All-In-One Features ---
-const aioConfig = require("../../All-In-One-Bot/config");
-const { schemas } = require("../../All-In-One-Bot/src/database/mongoose");
-const lavaclient = require("../../All-In-One-Bot/src/handlers/lavaclient");
-const giveawaysHandler = require("../../All-In-One-Bot/src/handlers/giveaway");
-const { DiscordTogether } = require("discord-together");
+// Attach new bot structures
+client.playerManager = new Map();
+client.triviaManager = new Map();
+client.queue = new Map();
 
-// Merge AIO config into Vantyx config
-client.config = { ...aioConfig, ...config }; 
-client.configAIO = aioConfig; // Keep original AIO config for AIO-specific logic
-client.databaseAIO = schemas;
-if (aioConfig.MUSIC.ENABLED) client.musicManager = lavaclient(client);
-if (aioConfig.GIVEAWAYS.ENABLED) client.giveawaysManager = giveawaysHandler(client);
-client.discordTogether = new DiscordTogether(client);
-client.loggerAIO = require("../../All-In-One-Bot/src/helpers/Logger");
-client.wait = require("util").promisify(setTimeout);
+// Load the new bot's configuration internally
+const aioPath = path.join(__dirname, "../../All-In-One-Bot/src");
+client.config = require(path.join(aioPath, "config/bot.js"));
+client.changelogs = require(path.join(aioPath, "config/changelogs.js"));
+client.emotes = require(path.join(aioPath, "config/emojis.json"));
+client.webhooks = require(path.join(aioPath, "config/webhooks.json"));
+
+// Mock Webhooks for the new Bot so it doesn't crash on start
+const webHooksArray = ['startLogs', 'shardLogs', 'errorLogs', 'dmLogs', 'voiceLogs', 'serverLogs', 'serverLogs2', 'commandLogs', 'consoleLogs', 'warnLogs', 'voiceErrorLogs', 'creditLogs', 'evalLogs', 'interactionLogs'];
+for (const webhookName of webHooksArray) {
+    client.webhooks[webhookName].id = "111111111111111111"; // Dummy ID to pass validation
+    client.webhooks[webhookName].token = "dummy_token"; 
+}
 
 /**
  * Main initialization block to start the bot.
  */
 (async () => {
   try {
-    // Establish database connection
+    // 1. Establish Vantyx Database connection
     await connectDB();
 
-    // Load Vantyx handlers
+    // 2. Establish New AIO Database connection
+    await require(path.join(aioPath, "database/connect"))();
+
+    // 3. Load Vantyx Handlers (XP, Logging, AutoMod)
     require("./src/handlers/commandHandler")(client);
     require("./src/handlers/eventHandler")(client);
 
-    const { recursiveReadDirSync } = require("../../All-In-One-Bot/src/helpers/Utils");
+    // 4. Load New Bot Handlers & Commands
+    // Override process.cwd() temporarily so internal absolute requires work
+    const originalCwd = process.cwd;
+    process.cwd = () => path.join(__dirname, "../../All-In-One-Bot");
+    
+    fs.readdirSync(path.join(aioPath, 'handlers')).forEach((dir) => {
+        fs.readdirSync(path.join(aioPath, `handlers/${dir}`)).forEach((handler) => {
+            try {
+              require(path.join(aioPath, `handlers/${dir}/${handler}`))(client);
+            } catch (e) {
+              logger.warn(`Skipped new AIO handler ${handler}: ${e.message}`);
+            }
+        });
+    });
 
-    // --- Load All-In-One Contexts ---
-    const aioContextsPath = path.join(__dirname, "../../All-In-One-Bot/src/contexts");
-    if (fs.existsSync(aioContextsPath)) {
-      recursiveReadDirSync(aioContextsPath).forEach((filePath) => {
-        const context = require(filePath);
-        if (context.name) {
-          client.contextMenus.set(context.name, context);
-        }
-      });
-    }
+    process.cwd = originalCwd; // Restore 
 
-    // --- Load All-In-One Events ---
-    const aioEventsPath = path.join(__dirname, "../../All-In-One-Bot/src/events");
-    if (fs.existsSync(aioEventsPath)) {
-      recursiveReadDirSync(aioEventsPath).forEach((filePath) => {
-        const eventName = path.basename(filePath, ".js");
-        const event = require(filePath);
-        client.on(eventName, event.bind(null, client));
-      });
-    }
-
-    // Sync slash commands with Discord API
+    // Sync slash commands with Discord API (Vantyx method)
     const registerCommands = require("./src/utils/registerCommands");
     await registerCommands(client);
 
@@ -129,7 +109,7 @@ client.wait = require("util").promisify(setTimeout);
     const port = process.env.PORT || 8080;
     http.createServer((req, res) => {
       res.writeHead(200);
-      res.end('VantyxBot is running!');
+      res.end('VantyxBot is running with 400+ Commands!');
     }).listen(port, () => logger.info(`Render port bind successful on port ${port}`));
 
     // Authenticate with Discord

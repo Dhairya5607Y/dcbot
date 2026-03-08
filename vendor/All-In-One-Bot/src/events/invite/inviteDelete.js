@@ -1,14 +1,21 @@
-const { getInviteCache } = require("@handlers/invite");
+const discord = require('discord.js');
 
-/**
- * @param {import('@src/structures').BotClient} client
- * @param {import('discord.js').Invite} invite
- */
 module.exports = async (client, invite) => {
-  const cachedInvites = getInviteCache(invite?.guild);
+    const logsChannel = await client.getLogs(invite.guild.id);
+    if (!logsChannel) return;
 
-  // Check if invite code exists in the cache
-  if (cachedInvites && cachedInvites.get(invite.code)) {
-    cachedInvites.get(invite.code).deletedTimestamp = Date.now();
-  }
+    client.embed({
+        title: `📨・Invite deleted`,
+        desc: `A invite has been deleted`,
+        fields: [
+            {
+                name: `> Code`,
+                value: `- ${invite.code}`
+            },
+            {
+                name: `> Timestamp`,
+                value: `- <t:${Math.floor(invite.createdTimestamp / 1000)}:R>`
+            }
+        ]
+    }, logsChannel).catch(() => { })
 };

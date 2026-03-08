@@ -1,59 +1,102 @@
-const { warnTarget } = require("@helpers/ModUtils");
-const { ApplicationCommandOptionType } = require("discord.js");
+const Discord = require('discord.js');
 
-/**
- * @type {import("@structures/Command")}
- */
-module.exports = {
-  name: "warn",
-  description: "warns the specified member",
-  category: "MODERATION",
-  userPermissions: ["KickMembers"],
-  command: {
-    enabled: true,
-    usage: "<ID|@member> [reason]",
-    minArgsCount: 1,
-  },
-  slashCommand: {
-    enabled: true,
-    options: [
-      {
-        name: "user",
-        description: "the target member",
-        type: ApplicationCommandOptionType.User,
-        required: true,
-      },
-      {
-        name: "reason",
-        description: "reason for warn",
-        type: ApplicationCommandOptionType.String,
-        required: false,
-      },
-    ],
-  },
+const Schema = require("../../database/models/warnings");
+const Case = require("../../database/models/warnCase");
+module.exports = async (client, interaction, args) => {
+    const perms = await client.checkUserPerms({
+        flags: [Discord.PermissionsBitField.Flags.ManageMessages],
+        perms: [Discord.PermissionsBitField.Flags.ManageMessages]
+    }, interaction);
 
-  async messageRun(message, args) {
-    const target = await message.guild.resolveMember(args[0], true);
-    if (!target) return message.safeReply(`No user found matching ${args[0]}`);
-    const reason = message.content.split(args[0])[1].trim();
-    const response = await warn(message.member, target, reason);
-    await message.safeReply(response);
-  },
+    if (perms == false) {
+        client.errNormal({
+            error: "You don't have the required permissions to use this command!",
+            type: 'editreply'
+        }, interaction);
+        return;
+    }
 
-  async interactionRun(interaction) {
-    const user = interaction.options.getUser("user");
-    const reason = interaction.options.getString("reason");
-    const target = await interaction.guild.members.fetch(user.id);
+    var member = interaction.options.getUser('user');
+    var reason = interaction.options.getString('reason');
+    var caseNumber;
+    await Case.findOne({ Guild: interaction.guild.id }).then(async data => {
+        if (!data) {
+            new Case({
+                Guild: interaction.guild.id,
+                Case: 1
+            }).save();
+            caseNumber = 1;
+        }
+        else {
+            data.Case += 1;
+            data.save();
+            caseNumber = data.Case;
+        }
+    });
 
-    const response = await warn(interaction.member, target, reason);
-    await interaction.followUp(response);
-  },
-};
+    Schema.findOne({ Guild: interaction.guild.id, User: member.id }, async (err, data) => {
+        if (data) {
+            data.Warnings.push({
+                Moderator: interaction.user.id,
+                Reason: reason,
+                Date: Date.now(),
+                Case: caseNumber
+            });
+            data.save();
+        }
+        else {
+            new Schema({
+                Guild: interaction.guild.id,
+                User: member.id,
+                Warnings: [{
+                    Moderator: interaction.user.id,
+                    Reason: reason,
+                    Date: Date.now(),
+                    Case: caseNumber
+                }]
+            }).save();
+        }
+    })
 
-async function warn(issuer, target, reason) {
-  const response = await warnTarget(issuer, target, reason);
-  if (typeof response === "boolean") return `${target.user.username} is warned!`;
-  if (response === "BOT_PERM") return `I do not have permission to warn ${target.user.username}`;
-  else if (response === "MEMBER_PERM") return `You do not have permission to warn ${target.user.username}`;
-  else return `Failed to warn ${target.user.username}`;
+    client.embed({
+        title: `🔨・Warn`,
+        desc: `You've been warned in **${interaction.guild.name}**`,
+        fields: [
+            {
+                name: "👤┆Moderator",
+                value: interaction.user.tag,
+                inline: true
+            },
+            {
+                name: "📄┆Reason",
+                value: reason,
+                inline: true
+            }
+        ]
+    }, member).catch(() => { })
+
+    client.emit('warnAdd', member, interaction.user, reason)
+    client.succNormal({
+        text: `User has received a warning!`,
+        fields: [
+            {
+                name: "👤┆User",
+                value: `${member}`,
+                inline: true
+            },
+            {
+                name: "👤┆Moderator",
+                value: `${interaction.user}`,
+                inline: true
+            },
+            {
+                name: "📄┆Reason",
+                value: reason,
+                inline: false
+            }
+        ],
+        type: 'editreply'
+    }, interaction);
 }
+
+ 

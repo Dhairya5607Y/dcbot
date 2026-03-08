@@ -1,70 +1,52 @@
-const { EMBED_COLORS } = require("@root/config");
-const { EmbedBuilder, ApplicationCommandOptionType } = require("discord.js");
+const Discord = require('discord.js');
 
-/**
- * @type {import("@structures/Command")}
- */
-module.exports = {
-  name: "queue",
-  description: "displays the current music queue",
-  category: "MUSIC",
-  botPermissions: ["EmbedLinks"],
-  command: {
-    enabled: true,
-    usage: "[page]",
-  },
-  slashCommand: {
-    enabled: true,
-    options: [
-      {
-        name: "page",
-        description: "page number",
-        type: ApplicationCommandOptionType.Integer,
-        required: false,
-      },
-    ],
-  },
+module.exports = async (client, interaction, args) => {
+    const player = client.player.players.get(interaction.guild.id);
 
-  async messageRun(message, args) {
-    const page = args.length && Number(args[0]) ? Number(args[0]) : 1;
-    const response = getQueue(message, page);
-    await message.safeReply(response);
-  },
+    const channel = interaction.member.voice.channel;
+    if (!channel) return client.errNormal({
+        error: `You're not in a voice channel!`,
+        type: 'editreply'
+    }, interaction);
 
-  async interactionRun(interaction) {
-    const page = interaction.options.getInteger("page");
-    const response = getQueue(interaction, page);
-    await interaction.followUp(response);
-  },
-};
+    if (player && (channel.id !== player?.voiceChannel)) return client.errNormal({
+        error: `You're not in the same voice channel!`,
+        type: 'editreply'
+    }, interaction);
 
-/**
- * @param {import("discord.js").CommandInteraction|import("discord.js").Message} arg0
- * @param {number} pgNo
- */
-function getQueue({ client, guild }, pgNo) {
-  const player = client.musicManager.getPlayer(guild.id);
-  if (!player) return "🚫 There is no music playing in this guild.";
+    if (!player || !player.queue.current) return client.errNormal({
+        error: "There are no songs playing in this server",
+        type: 'editreply'
+    }, interaction);
 
-  const queue = player.queue;
-  const embed = new EmbedBuilder().setColor(EMBED_COLORS.BOT_EMBED).setAuthor({ name: `Queue for ${guild.name}` });
+    let count = 0;
+    let status;
 
-  // change for the amount of tracks per page
-  const multiple = 10;
-  const page = pgNo || 1;
+    if (player.queue.length == 0) {
+        status = "No more music in the queue";
+    }
+    else {
+        status = player.queue.map((track) => {
+            count += 1;
+            return (`**[#${count}]**┆${track.title.length >= 45 ? `${track.title.slice(0, 45)}...` : track.title} (Requested by <@!${track.requester.id}>)`);
+        }).join("\n");
+    }
 
-  const end = page * multiple;
-  const start = end - multiple;
+    if (player.queue.current.thumbnail) thumbnail = player.queue.current.thumbnail;
+    else thumbnail = interaction.guild.iconURL({ size: 1024 });
 
-  const tracks = queue.tracks.slice(start, end);
-
-  if (queue.current) embed.addFields({ name: "Current", value: `[${queue.current.title}](${queue.current.uri})` });
-  if (!tracks.length) embed.setDescription(`No tracks in ${page > 1 ? `page ${page}` : "the queue"}.`);
-  else embed.setDescription(tracks.map((track, i) => `${start + ++i} - [${track.title}](${track.uri})`).join("\n"));
-
-  const maxPages = Math.ceil(queue.tracks.length / multiple);
-
-  embed.setFooter({ text: `Page ${page > maxPages ? maxPages : page} of ${maxPages}` });
-
-  return { embeds: [embed] };
+    client.embed({
+        title: `${client.emotes.normal.music}・Songs queue - ${interaction.guild.name}`,
+        desc: status,
+        thumbnail: thumbnail,
+        fields: [
+            {
+                name: `${client.emotes.normal.music} Current song:`,
+                value: `${player.queue.current.title} (Requested by <@!${player.queue.current.requester.id}>)`
+            }
+        ],
+        type: 'editreply'
+    }, interaction)
 }
+
+ 

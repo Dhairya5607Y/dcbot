@@ -1,210 +1,242 @@
-const { EmbedBuilder, ApplicationCommandOptionType } = require("discord.js");
-const prettyMs = require("pretty-ms");
-const { EMBED_COLORS, MUSIC } = require("@root/config");
-const { SpotifyItemType } = require("@lavaclient/spotify");
+const Discord = require('discord.js');
 
-const search_prefix = {
-  YT: "ytsearch",
-  YTM: "ytmsearch",
-  SC: "scsearch",
-};
+module.exports = async (client, interaction, args) => {
+    if (!interaction.member.voice.channel) return client.errNormal({
+        error: `You're not in a voice channel!`,
+        type: 'editreply'
+    }, interaction);
 
-/**
- * @type {import("@structures/Command")}
- */
-module.exports = {
-  name: "play",
-  description: "play a song from youtube",
-  category: "MUSIC",
-  botPermissions: ["EmbedLinks"],
-  command: {
-    enabled: true,
-    usage: "<song-name>",
-    minArgsCount: 1,
-  },
-  slashCommand: {
-    enabled: true,
-    options: [
-      {
-        name: "query",
-        description: "song name or url",
-        type: ApplicationCommandOptionType.String,
-        required: true,
-      },
-    ],
-  },
+    let channel = interaction.member.voice ? interaction.member.voice.channel : null;
+    if (!channel) return client.errNormal({
+        error: `The channel does not exist!`,
+        type: 'editreply'
+    }, interaction);
 
-  async messageRun(message, args) {
-    const query = args.join(" ");
-    const response = await play(message, query);
-    await message.safeReply(response);
-  },
+    let player = client.player.players.get(interaction.guild.id);
 
-  async interactionRun(interaction) {
-    const query = interaction.options.getString("query");
-    const response = await play(interaction, query);
-    await interaction.followUp(response);
-  },
-};
+    if (player && (channel.id !== player?.voiceChannel)) return client.errNormal({
+        error: `You are not in the same voice channel!`,
+        type: 'editreply'
+    }, interaction);
 
-/**
- * @param {import("discord.js").CommandInteraction|import("discord.js").Message} arg0
- * @param {string} query
- */
-async function play({ member, guild, channel }, query) {
-  if (!member.voice.channel) return "🚫 You need to join a voice channel first";
-
-  let player = guild.client.musicManager.getPlayer(guild.id);
-  if (player && !guild.members.me.voice.channel) {
-    player.disconnect();
-    await guild.client.musicManager.destroyPlayer(guild.id);
-  }
-
-  if (player && member.voice.channel !== guild.members.me.voice.channel) {
-    return "🚫 You must be in the same voice channel as mine";
-  }
-
-  let embed = new EmbedBuilder().setColor(EMBED_COLORS.BOT_EMBED);
-  let tracks;
-  let description = "";
-
-  try {
-    if (guild.client.musicManager.spotify.isSpotifyUrl(query)) {
-      if (!process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET) {
-        return "🚫 Spotify songs cannot be played. Please contact the bot owner";
-      }
-
-      const item = await guild.client.musicManager.spotify.load(query);
-      switch (item?.type) {
-        case SpotifyItemType.Track: {
-          const track = await item.resolveYoutubeTrack();
-          tracks = [track];
-          description = `[${track.info.title}](${track.info.uri})`;
-          break;
-        }
-
-        case SpotifyItemType.Artist:
-          tracks = await item.resolveYoutubeTracks();
-          description = `Artist: [**${item.name}**](${query})`;
-          break;
-
-        case SpotifyItemType.Album:
-          tracks = await item.resolveYoutubeTracks();
-          description = `Album: [**${item.name}**](${query})`;
-          break;
-
-        case SpotifyItemType.Playlist:
-          tracks = await item.resolveYoutubeTracks();
-          description = `Playlist: [**${item.name}**](${query})`;
-          break;
-
-        default:
-          return "🚫 An error occurred while searching for the song";
-      }
-
-      if (!tracks) guild.client.logger.debug({ query, item });
-    } else {
-      const res = await guild.client.musicManager.rest.loadTracks(
-        /^https?:\/\//.test(query) ? query : `${search_prefix[MUSIC.DEFAULT_SOURCE]}:${query}`
-      );
-      switch (res.loadType) {
-        case "LOAD_FAILED":
-          guild.client.logger.error("Search Exception", res.exception);
-          return "🚫 There was an error while searching";
-
-        case "NO_MATCHES":
-          return `No results found matching ${query}`;
-
-        case "PLAYLIST_LOADED":
-          tracks = res.tracks;
-          description = res.playlistInfo.name;
-          break;
-
-        case "TRACK_LOADED":
-        case "SEARCH_RESULT": {
-          const [track] = res.tracks;
-          tracks = [track];
-          break;
-        }
-
-        default:
-          guild.client.logger.debug("Unknown loadType", res);
-          return "🚫 An error occurred while searching for the song";
-      }
-
-      if (!tracks) guild.client.logger.debug({ query, res });
-    }
-  } catch (error) {
-    guild.client.logger.error("Search Exception", typeof error === "object" ? JSON.stringify(error) : error);
-    return "🚫 An error occurred while searching for the song";
-  }
-
-  if (!tracks) return "🚫 An error occurred while searching for the song";
-
-  if (tracks.length === 1) {
-    const track = tracks[0];
-    if (!player?.playing && !player?.paused && !player?.queue.tracks.length) {
-      embed.setAuthor({ name: "Added Track to queue" });
-    } else {
-      const fields = [];
-      embed
-        .setAuthor({ name: "Added Track to queue" })
-        .setDescription(`[${track.info.title}](${track.info.uri})`)
-        .setFooter({ text: `Requested By: ${member.user.username}` });
-
-      fields.push({
-        name: "Song Duration",
-        value: "`" + prettyMs(track.info.length, { colonNotation: true }) + "`",
-        inline: true,
-      });
-
-      if (player?.queue?.tracks?.length > 0) {
-        fields.push({
-          name: "Position in Queue",
-          value: (player.queue.tracks.length + 1).toString(),
-          inline: true,
+    if (!player) {
+        player = client.player.create({
+            guild: interaction.guild.id,
+            voiceChannel: channel.id,
+            textChannel: interaction.channel.id,
+            selfDeafen: true
         });
-      }
-      embed.addFields(fields);
+
+        if (!channel.joinable) return client.errNormal({
+            error: `That channel isn\'t joinable`,
+            type: 'editreply'
+        }, interaction);
+        player.connect()
+
+        setTimeout(() => {
+            if (channel.type == Discord.ChannelType.GuildStageVoice) {
+                interaction.guild.members.me.voice.setSuppressed(false);
+            }
+        }, 500)
     }
-  } else {
-    embed
-      .setAuthor({ name: "Added Playlist to queue" })
-      .setDescription(description)
-      .addFields(
-        {
-          name: "Enqueued",
-          value: `${tracks.length} songs`,
-          inline: true,
-        },
-        {
-          name: "Playlist duration",
-          value:
-            "`" +
-            prettyMs(
-              tracks.map((t) => t.info.length).reduce((a, b) => a + b, 0),
-              { colonNotation: true }
-            ) +
-            "`",
-          inline: true,
+
+    player = client.player.players.get(interaction.guild.id);
+    if (player.state !== "CONNECTED") player.connect();
+
+    var query = interaction.options.getString('song');
+
+    client.simpleEmbed({
+        desc: `🔎┆Searching...`,
+        type: 'editreply'
+    }, interaction)
+
+    const res = await player.search(query, interaction.user);
+
+    if (res.loadType === 'LOAD_FAILED') {
+        if (!player.queue.current) player.destroy();
+        return client.errNormal({
+            error: `Error getting music. Please try again in a few minutes`,
+            type: 'editreply'
+        }, interaction);
+    }
+
+    switch (res.loadType) {
+        case 'NO_MATCHES': {
+            if (!player.queue.current) player.destroy()
+            await client.errNormal({
+                error: `No music was found`,
+                type: 'editreply'
+            }, interaction);
+            break;
         }
-      )
-      .setFooter({ text: `Requested By: ${member.user.username}` });
-  }
 
-  // create a player and/or join the member's vc
-  if (!player?.connected) {
-    player = guild.client.musicManager.createPlayer(guild.id);
-    player.queue.data.channel = channel;
-    player.connect(member.voice.channel.id, { deafened: true });
-  }
+        case 'TRACK_LOADED': {
+            const track = res.tracks[0];
+            await player.queue.add(track);
 
-  // do queue things
-  const started = player.playing || player.paused;
-  player.queue.add(tracks, { requester: member.user.username, next: false });
-  if (!started) {
-    await player.queue.start();
-  }
+            if (!player.playing && !player.paused) {
+                player.play();
+            }
+            else {
+                client.embed({
+                    title: `${client.emotes.normal.music}・${track.title}`,
+                    url: track.uri,
+                    desc: `The song has been added to the queue!`,
+                    thumbnail: track.thumbnail,
+                    fields: [
+                        {
+                            name: `👤┆Requested By`,
+                            value: `${track.requester}`,
+                            inline: true
+                        },
+                        {
+                            name: `${client.emotes.normal.clock}┆Ends at`,
+                            value: `<t:${((Date.now() / 1000) + (track.duration / 1000)).toFixed(0)}:f>`,
+                            inline: true
+                        },
+                        {
+                            name: `🎬┆Author`,
+                            value: `${track.author}`,
+                            inline: true
+                        }
+                    ],
+                    type: 'editreply'
+                }, interaction)
+            }
+            break;
+        }
 
-  return { embeds: [embed] };
+        case 'PLAYLIST_LOADED': {
+            await player.queue.add(res.tracks);
+            if (!player.playing && !player.paused) player.play()
+            else {
+
+            }
+            break;
+        }
+
+        case 'SEARCH_RESULT': {
+            let max = 5, collected, filter = (i) => i.user.id === interaction.user.id;
+            if (res.tracks.length < max) max = res.tracks.length;
+
+            let row = new Discord.ActionRowBuilder()
+                .addComponents(
+                    new Discord.ButtonBuilder()
+                        .setEmoji("1️⃣")
+                        .setCustomId("1")
+                        .setStyle(Discord.ButtonStyle.Secondary),
+
+                    new Discord.ButtonBuilder()
+                        .setEmoji("2️⃣")
+                        .setCustomId("2")
+                        .setStyle(Discord.ButtonStyle.Secondary),
+
+                    new Discord.ButtonBuilder()
+                        .setEmoji("3️⃣")
+                        .setCustomId("3")
+                        .setStyle(Discord.ButtonStyle.Secondary),
+
+                    new Discord.ButtonBuilder()
+                        .setEmoji("4️⃣")
+                        .setCustomId("4")
+                        .setStyle(Discord.ButtonStyle.Secondary),
+
+                    new Discord.ButtonBuilder()
+                        .setEmoji("5️⃣")
+                        .setCustomId("5")
+                        .setStyle(Discord.ButtonStyle.Secondary),
+                );
+
+            let row2 = new Discord.ActionRowBuilder()
+                .addComponents(
+                    new Discord.ButtonBuilder()
+                        .setEmoji("🛑")
+                        .setLabel("Cancel")
+                        .setCustomId("cancel")
+                        .setStyle(Discord.ButtonStyle.Danger),
+                );
+
+            const results = res.tracks
+                .slice(0, max)
+                .map((track, index) => `**[#${++index}]**┆${track.title.length >= 45 ? `${track.title.slice(0, 45)}...` : track.title}`)
+                .join('\n');
+
+            client.embed({
+                title: `🔍・Search Results`,
+                desc: results,
+                fields: [
+                    {
+                        name: `❓┆Cancel search?`,
+                        value: `Press \`cancel\` to stop the search`,
+                        inline: true
+                    }
+                ],
+                components: [row, row2],
+                type: 'editreply'
+            }, interaction)
+
+            try {
+                i = await interaction.channel.awaitMessageComponent({ filter, max: 1, time: 30e3, componentType: Discord.ComponentType.Button, errors: ['time'] });
+            } catch (e) {
+                if (!player.queue.current) player.destroy();
+                row.components.forEach((button) => button.setDisabled(true));
+                row2.components.forEach((button) => button.setDisabled(true));
+                return client.errNormal({
+                    error: `You didn't provide a selection`,
+                    type: 'editreply',
+                    components: [row, row2]
+                }, interaction)
+            }
+
+            const first = i.customId;
+            i.message.delete();
+            i.deferUpdate();
+
+            if (first.toLowerCase() === 'cancel') {
+                if (!player.queue.current) player.destroy();
+                return interaction.channel.send('Cancelled selection.');
+            }
+
+            const index = Number(first) - 1;
+            if (index < 0 || index > max - 1) return client.errNormal({
+                error: `The number you provided too small or too big (1-${max})`,
+                type: 'editreply'
+            }, interaction)
+
+            const track = res.tracks[index];
+            player.queue.add(track);
+
+            if (!player.playing && !player.paused) {
+                player.play();
+            }
+            else {
+                client.embed({
+                    title: `${client.emotes.normal.music}・${track.title}`,
+                    url: track.uri,
+                    desc: `The song has been added to the queue!`,
+                    thumbnail: track.thumbnail,
+                    fields: [
+                        {
+                            name: `👤┆Requested By`,
+                            value: `${track.requester}`,
+                            inline: true
+                        },
+                        {
+                            name: `${client.emotes.normal.clock}┆Ends at`,
+                            value: `<t:${((Date.now() / 1000) + (track.duration / 1000)).toFixed(0)}:f>`,
+                            inline: true
+                        },
+                        {
+                            name: `🎬┆Author`,
+                            value: `${track.author}`,
+                            inline: true
+                        }
+                    ],
+                    type: 'editreply'
+                }, interaction)
+            }
+        }
+    }
 }
+
+ 

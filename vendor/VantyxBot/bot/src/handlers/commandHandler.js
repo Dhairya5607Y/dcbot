@@ -8,38 +8,9 @@ const GlobalCommands = require("../database/models/GlobalCommands");
  * Also synchronizes the command list with the database for the dashboard.
  */
 module.exports = async (client) => {
-  // --- 1. Load AIO commands FIRST (as requested by user) ---
-  const aioPath = path.join(__dirname, "../../../../All-In-One-Bot/src/commands");
-  if (fs.existsSync(aioPath)) {
-    const aioFolders = fs.readdirSync(aioPath);
-    for (const folder of aioFolders) {
-      const folderPath = path.join(aioPath, folder);
-      if (!fs.lstatSync(folderPath).isDirectory()) continue;
-
-      const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith(".js"));
-      for (const file of commandFiles) {
-        try {
-          const command = require(path.join(folderPath, file));
-          if (command.name && (command.interactionRun || command.messageRun)) {
-            command.category = folder;
-            command.isAIO = true; // Flag for special handling
-            client.commands.set(command.name, command);
-            
-            // Handle AIO aliases
-            if (Array.isArray(command.command?.aliases)) {
-              command.command.aliases.forEach((alias) => {
-                client.commands.set(alias.toLowerCase(), command);
-              });
-            }
-
-            logger.info(`Loaded AIO command: ${command.name}`);
-          }
-        } catch (e) {
-          logger.warn(`Failed to load AIO command at ${file}: ${e.message}`);
-        }
-      }
-    }
-  }
+  // --- 1. AIO commands are now loaded intrinsically by the AIO handlers ---
+  // The new ALL-IN-ONE-Discord-Bot automatically populates client.commands
+  // during initialization in `bot/index.js`
 
   // --- 2. Load Vantyx commands ONLY if they don't collide (Disabled by user request) ---
   /*
@@ -71,21 +42,14 @@ module.exports = async (client) => {
 
   // Map commands to a clean format for database synchronization
   const commandsList = client.commands.map((cmd) => {
-    if (cmd.isAIO) {
-      return {
-        name: cmd.name,
-        description: cmd.description || "No description",
-        category: cmd.category || "AIO",
-        options: (cmd.slashCommand?.options || []).map(opt => cleanOption(opt))
-      };
-    }
-    const data = cmd.data.toJSON ? cmd.data.toJSON() : cmd.data;
+    // New AIO bot stores slash command data in `cmd.data`
+    const data = cmd.data?.toJSON ? cmd.data.toJSON() : cmd.data;
 
     return {
-      name: data.name,
-      description: data.description,
+      name: data?.name || "Unknown",
+      description: data?.description || "No description",
       category: cmd.category || "General",
-      options: (data.options || []).map((opt) => cleanOption(opt)),
+      options: (data?.options || []).map((opt) => cleanOption(opt)),
     };
   });
 
