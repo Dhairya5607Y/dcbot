@@ -24,4 +24,4 @@ async function connect() {
   return;
 }
 
-module.exports = async () => await new Promise(connect)
+module.exports = connect;
