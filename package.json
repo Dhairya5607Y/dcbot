@@ -5,12 +5,8 @@
   "private": true,
   "main": "index.js",
   "type": "commonjs",
-  "workspaces": [
-    "vendor/VantyxBot/bot",
-    "vendor/VantyxBot/api",
-    "vendor/VantyxBot/dashboard"
-  ],
   "scripts": {
+    "postinstall": "npm install --prefix vendor/VantyxBot/bot && npm install --prefix vendor/VantyxBot/api && npm install --prefix vendor/VantyxBot/dashboard",
     "start": "node index.js",
     "build:dashboard": "npm run build --workspace vantyx-dashboard",
     "dev": "nodemon index.js --ignore 'dist/' --ignore 'node_modules/'",
