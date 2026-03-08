@@ -17,6 +17,7 @@ import {
   PlusCircle,
   Ticket,
   SmilePlus,
+  Code2,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import Image from "next/image";
@@ -63,21 +64,21 @@ export default function Sidebar({ guildId }) {
       group: "main",
     },
     {
-      href: `/servers/${guildId}/automod`,
+      href: `/servers/${guildId}/developer`,
+      icon: Code2,
+      label: "Developer Info",
+      group: "main",
+    },
+    {
+      href: `/servers/${guildId}/moderation`,
       icon: Shield,
-      label: "Auto-Moderation",
+      label: "Moderation Settings",
       group: "moderation",
     },
     {
       href: `/servers/${guildId}/warnings`,
       icon: AlertTriangle,
-      label: "Warnings",
-      group: "moderation",
-    },
-    {
-      href: `/servers/${guildId}/logs`,
-      icon: FileText,
-      label: "Logs",
+      label: "Warning Rules",
       group: "moderation",
     },
     {
