@@ -50,7 +50,7 @@ const client = new Client({
     Partials.User,
     Partials.GuildScheduledEvent
   ],
-  intents: Object.values(GatewayIntentBits).filter(Number.isInteger), // All intents
+  intents: Object.values(GatewayIntentBits).filter(Number.isInteger).reduce((acc, bit) => acc | bit, 0), // All intents as a single bitfield
   restTimeOffset: 0
 });
 
@@ -109,6 +109,7 @@ for (const webhookName of webHooksArray) {
               require(path.join(aioPath, `handlers/${dir}/${handler}`))(client);
             } catch (e) {
               logger.warn(`Skipped new AIO handler ${handler}: ${e.message}`);
+              if (handler === 'giveaway.js') console.error(e.stack);
             }
         });
     });

@@ -13,11 +13,16 @@ const CommandsSchema = require("../../database/models/customCommandAdvanced");
 const fetch = require("node-fetch");
 const db = require("pro.db");
 
-const groq = require("groq-sdk");
+let Groq;
+try {
+  const groq = require("groq-sdk");
+  Groq = new groq.Groq({
+    apiKey: process.env.GROQ || "missing_key"
+  });
+} catch (e) {
+  Groq = null;
+}
 const { ai_prompt } = require("../../config/bot");
-const Groq = new groq.Groq({
-  apiKey: process.env.GROQ
-})
 /**
  * 
  * @param {Discord.Client} client 

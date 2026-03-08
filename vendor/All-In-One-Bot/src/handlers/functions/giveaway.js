@@ -30,14 +30,20 @@ module.exports = (client) => {
         }
     };
 
-    const manager = new GiveawayManagerWithOwnDatabase(client, {
-        default: {
-            botsCanWin: false,
-            embedColor: client.config.colors.normal,
-            embedColorEnd: client.config.colors.error,
-            reaction: '🥳'
-        }
-    }, true);
+    let manager;
+    try {
+        manager = new GiveawayManagerWithOwnDatabase(client, {
+            default: {
+                botsCanWin: false,
+                embedColor: client.config?.colors?.normal || "#5865F2",
+                embedColorEnd: client.config?.colors?.error || "#ED4245",
+                reaction: '🥳'
+            }
+        }, true);
+    } catch (e) {
+        console.error(`[ERROR] Failed to initialize GiveawaysManager: ${e.message}`);
+        return; // Exit handler if manager can't be created
+    }
 
     client.giveawaysManager = manager;
 
